@@ -33,11 +33,11 @@ $a +++[- $w ----------- $a]						; reduce $w with 3*11=33(!)
      [ --								; no, reuce by 2 (>)
       [ --								; no, reduce by 2 (@)
        [ $i . $t+++++++[- $w ++++++++ $t] $w [-] ]  			; reset $t and $w
-       $t [- 								; in @ need to implement
-			$p[-]$i.$n,.[-<[<<]+[>>]<] @n			; move to ascii value of variable left
+       $t [- 								; in @
+ 			$p[-]$i.$n,.[-<[<<]+[>>]<] @n			; move to ascii value of variable left
 			$c [<<]>[-<<<+>>>>[>>] @z $p + $c [<<]>]	; copy n to p and c-1
 			<<<[->>>+<<<]>>>>[->>] @z			; restore original value
-          $t] $w							; in @ need to implement (but not yet)
+          $t] $w							; in @ end
       ]$t [- $i.$p+$t ] $w						; in > adjusts pos
      ]$t [- $i.$p-$t ] $w						; in < adjusts pos
     ]$t [[,----------]++++++++++.[-]] $w 				; in ; removes comment
