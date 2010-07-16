@@ -8,6 +8,7 @@ One of the largest problems with brainfuck is the location logic. When programs 
 {{{
 :a ; defining variable named a
 $a ; command to move to th eposition of a
+!a ; remove variable named a
 ;  ; a comment. We allow brainfuck and ebf-code here so ebf need to euither strip it completly or just the harmful characters.
 }}}
 
