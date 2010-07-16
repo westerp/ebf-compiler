@@ -1,0 +1,46 @@
+#summary Introcution to the ebf-compiler and some thoughts on other peoples ideas
+#labels Featured
+=Creating a self-hosting compiler=	
+==What I expect you to know to understand this==
+
+I expect you to know elementary BrainFuck and I expect you to have
+tried to create your own BrainFuck programs. You may try some of the links
+on this page or google it. Some people prefer to write brainf**k so you
+might want to search for that as well.
+
+==What is a compiler==
+<p>According to [http://en.wikipedia.org/wiki/Compiler Wikipedia] it is a program
+that converts a high level source code to a lower level source code or
+machine code. BrainFuck, how I see it, is machine code with readable
+instructions so that there is no need for a Assembly language other than 
+the instructions themselves. A [http://www.clifford.at/bfcpu/bfcpu.html BrainFuck CPU ] design
+example is made by Clifford Wolf.
+
+
+==Has this been done before?==
+<p>There are several approaches made by many to create extensions to
+BrainFuck.
+===By changing the language===
+<p>Some create extensions in the interprenter/compiler so that you actually
+change the CPU. a notable example would be 
+[http://www.parkscomputing.com/code/pbrain/ pbrain], where Paul M. Parks
+used <tt>()</tt> to enclose procedures and <tt>:</tt> to call them. Which procedure you define
+or call was the value of the current cell. Nice idea but it will never run
+on any BrainFuck CPU/interprenter og even be compiled by any BrainFuck to
+native/other compiler. (though Tim Rohlfs did write support in his IDE)
+
+
+===By creating a compiler in perl/c/other language===
+<p>You define a language and create a compiler that creates valid and
+standard BrainFuck code. [http://www.cs.tufts.edu/~couch/bfmacro/bfmacro/ bfmacro]
+by Alva L. Couch and  [http://www.clifford.at/bfcpu/bfcomp.html 2 stage compiler bfc=>bfa=>bf] 
+by Clifford Wolf. Both of these compile their own invented
+extensions to standard BrainFuck but non of the compiler are writen in
+either brainfuck or the language the compiler supports. 
+
+==The aim of this project==
+<p>
+The aim of this project was to make a self-hosting (written in itself)
+compiler and see how I could bootstrap this and how it will eventually
+evolve. Beeing [http://www.iwriteiam.nl/Ha_bf_Turing.html Turing complete] there is nothing you cannot implement in 
+BrainFuck.
