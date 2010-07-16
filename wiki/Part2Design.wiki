@@ -63,5 +63,5 @@ $i,]									; loop until read EOF == 0
 }}}
 
 = Hand compiling = 
-Since the code did not include use the destructor I did not implement it yet, but I have a placeholder for it so I don't have to redo the switch. I used the very structured list of variables and assumed the fort to be 0 and so om and for every @x i assumed poition x and for every $x i added < or > according to its distance from what I saw was the current position. After that i used {{{perl -pi~ -e 's/;.*//'}}} 
-to remove all the comments and tried to run itself with the original source above as input. I then did a diff between them to see that when hand compiling I had added the arrows before the variable and. The very first compiled version is called ebf10_handcompiled.bf
+Since the code did not include use the destructor I did not implement it yet, but I have a placeholder for it so I don't have to redo the switch. I used the very structured list of variables and assumed the fort to be 0 and so om and for every @x i assumed position x and for every $x i added < or > according to its distance from what I saw was the current position. After that i used {{{perl -pi~ -e 's/;.*//'}}} 
+to remove all the comments and tried to run itself with the original source above as input. I then did a diff between them to see that when hand compiling I had added the arrows before the variable and. The very first compiled version is called ebf10_handcompiled.bf. This require a interprenter/compiler that sets the cell to 0 on EOF to work and has wrapping cells (of any size).
