@@ -1,4 +1,4 @@
-#summary very firt version of the compiler
+#summary very first version of the compiler
 
 = First draft =
 
