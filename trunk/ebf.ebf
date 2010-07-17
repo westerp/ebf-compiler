@@ -1,0 +1,77 @@
+;[
+;
+;ebf.ebf a bf compiler v1. In addition to existing BF (<>+-,.[])
+;we have current extra commands:
+;
+; ;  == comment rest of line (no change)
+; !a == deallocate variable a. It is assumed that is is cleared and last variable allocated
+; :a == allocate variable a. It will take any available place
+; $a == move to a
+; @a == indicate that we are at a (usefull for asymetric loops
+; like :a:b:c $b+ $a[ $b- ] either in a or b compiler thinks b $c[ @b - $c ])
+;
+; By Pål Wester
+; ]
+
+:c variable crumble
+:n variable value
+:z zero
+:g global variable index
+:i input
+:t temporary
+:w working
+:a adding aide
+:p position
+
+++++++++[->++++++++<]>                              ; 64
+[->>>>>>>[>>>>>>>>]+[<<<<<<<<]>]                    ; 8*64 = 512
+>>>>>>>[->>>>>>>>]                                  ; goto 520
+@i ; indicates that we are on i
+
+$i ,[                                               ; outer loop. EOF=0
+
+; copy $i to $w
+[- $t+ $w+ $i ]                                     ; pour $i to $w and $t
+$t [- $i+ $t  ]                                     ; pour $t to $i
++                                                   ; i=I|t=1|w=I|p=x|n=0|v=0
+; switch
+$a +++[- $w ----------- $a]                         ; reduce $w with 3*11=33(!)
+ $w [---                                            ; no, reduce $w with 3($)
+  [ $a++[- $w----------- $a ] $w                        ; no, reduce $w with 22(:)
+   [ -                                              ; no, reduce by 1 (;)
+    [ -                                             ; no, reuce by 1 (<)
+     [ --                                           ; no, reuce by 2 (>)
+      [ --                                          ; no, reduce by 2 (@)
+       [ $i . $t+++++++[- $w ++++++++ $t] $w [-] ]  ; reset $t and $w
+       $t [-                                        ; in @
+            $p[-]$i.$n,.[-<[<<]+[>>]<] @n               ; move to ascii value of variable left
+            $c [<<]>[-<<<+>>>>[>>] @z $p + $c [<<]>]; copy n to p and c-1
+            <<<[->>>+<<<]>>>>[->>] @z               ; restore original value
+          $t] $w                                    ; in @ end
+      ]$t [- $i.$p+$t ] $w                          ; in > adjusts pos
+     ]$t [- $i.$p-$t ] $w                           ; in < adjusts pos
+    ]$t [[,----------]++++++++++.[-]] $w            ; in ; removes comment
+   ]$t [
+            $i.$n,.[-<[<<]+[>>]<] @n                ; move to ascii value of variable left
+            $g [- $t+ $c[<<]>+>[>>] @z >]           ; copy g to t and n
+            $c [<<]>>[->>] @z                       ; clear trail
+            $t [- $g+ $t]                           ; increase g and pour t on g
+     $t]$w                                          ; in :
+  ]$t [-                                            ; move to a ($)
+            $i.[-]$n,.[-<[<<]+[>>]<] @n             ; move to ascii value of variable left
+            $c [<<]>[-<<<+>>>>[>>] @z $i + $a + $c [<<]>]; copy n to i and a and c-1
+            <<<[->>>+<<<]>>>>[->>] @z               ; restore original value
+            <++++++[->++++++++++<]                  ; 60 in z (<)
+            ; we have new position in i and old in p
+            $w+$p[ $a [-$w-]<[@w-
+                $p[-$z.$p] + $t] $w+$p-]            ; a is smaller than p, eg. <
+            $z++$w-$a[-$z.$a]$z[-]
+            $i[-$p+$i]                              ; set current position
+    $t] $w
+ ]$t [- remove var ] $w                             ; in ! need to implement (but not yet)
+$i,]                                                ; loop until read EOF == 0
+
+
+
+
+
