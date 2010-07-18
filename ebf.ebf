@@ -22,7 +22,7 @@
 :w working
 :a adding aide
 :p position
-
+:e error number
 ++++++++[->++++++++<]>                              ; 64
 [->>>>>>>[>>>>>>>>]+[<<<<<<<<]>]                    ; 8*64 = 512
 >>>>>>>[->>>>>>>>]                                  ; goto 520
@@ -42,35 +42,72 @@ $a +++[- $w ----------- $a]                         ; reduce $w with 3*11=33(!)
     [ -                                             ; no, reuce by 1 (<)
      [ --                                           ; no, reuce by 2 (>)
       [ --                                          ; no, reduce by 2 (@)
-       [ $i . $t+++++++[- $w ++++++++ $t] $w [-] ]  ; reset $t and $w
+       [ $i . $t- $w [-] ]                          ; reset $t and $w
        $t [-                                        ; in @
-            $p[-]$i.$n,.[-<[<<]+[>>]<] @n               ; move to ascii value of variable left
-            $c [<<]>[-<<<+>>>>[>>] @z $p + $c [<<]>]; copy n to p and c-1
+            $e++++$p[-]-$i.$n,.[-<[<<]+[>>]<] @n    ; set error flag. print and move to ascii value of variable left
+            $c [<<]>                                ; move to array
+            [-<<<+>>>>[>>] @z                       ; copy n to p and c-1
+                    $p + $e[-] $c[<<]>              ; plus reset error flag
+                ]                                   ; end copy
             <<<[->>>+<<<]>>>>[->>] @z               ; restore original value
           $t] $w                                    ; in @ end
       ]$t [- $i.$p+$t ] $w                          ; in > adjusts pos
-     ]$t [- $i.$p-$t ] $w                           ; in < adjusts pos
+      ]$t [- $i. $a+$p[-$a-]<[-<]@w $t ] $w         ; in < adjusts pos. Make sure we don't go below 0.
     ]$t [[,----------]++++++++++.[-]] $w            ; in ; removes comment
-   ]$t [
+   ]$t [-                                           ; in :
             $i.$n,.[-<[<<]+[>>]<] @n                ; move to ascii value of variable left
-            $g [- $t+ $c[<<]>+>[>>] @z >]           ; copy g to t and n
+
+            error checking code for double assignment
+            $c[<<]>[                                ; move to n(i) check if non zero
+              >[>>]@z $e+ $c[<<]>                   ; when non zero go to e and set 1 (: error)
+            [-]]>[>>]@z                             ; back to z
+
+            $g+[- $t+ $c[<<]>+>[>>] @z >]           ; increment g and copy g to t and n
             $c [<<]>>[->>] @z                       ; clear trail
-            $t [- $g+ $t]                           ; increase g and pour t on g
-     $t]$w                                          ; in :
-  ]$t [-                                            ; move to a ($)
+            $t [- $g+ $t]                           ; restore new g
+     $t]$w                                          ; in : end
+  ]$t [                                             ; move to a ($)
             $i.[-]$n,.[-<[<<]+[>>]<] @n             ; move to ascii value of variable left
-            $c [<<]>[-<<<+>>>>[>>] @z $i + $a + $c [<<]>]; copy n to i and a and c-1
+            $c [<<]>                                ; if zero it is not defined.
+            [-<<<+>>>>[>>] @z $i + $a + $c [<<]>]   ; copy n to i and a and c-1
             <<<[->>>+<<<]>>>>[->>] @z               ; restore original value
             <++++++[->++++++++++<]                  ; 60 in z (<)
+
+            error checking is i 0 set e to 2 t is still 1
+            $i[-$t-$a-
             ; we have new position in i and old in p
             $w+$p[ $a [-$w-]<[@w-
                 $p[-$z.$p] + $t] $w+$p-]            ; a is smaller than p, eg. <
             $z++$w-$a[-$z.$a]$z[-]
             $i[-$p+$i]                              ; set current position
-    $t] $w
- ]$t [- remove var ] $w                             ; in ! need to implement (but not yet)
-$i,]                                                ; loop until read EOF == 0
 
+            $t]>[@t$e++$t->]@w                      ; set error flag if t is not set
+  $t] $w
+ ]$t [- remove var
+        $e+++$i.$g-                                 ; prnit and reduce g
+        $n,.[-<[<<]+[>>]<] @n                       ; read and move to ascii value of variable left
+        $c[<<]>[
+            >[>>]@z$e[-]$c[<<]>                     ; remove error flag (because value is positive)
+            [-]                                     ; reset value
+        ]>[->>]@z                                   ; restore
+
+ $t]                                                ; end !
+check for error
+$t+                                                 ; set flag
+$e[
+    >+++++++++[->++++++++<]>---                      ; prints ERROR using previous block
+    .+++++++++++++..---.+++.                         ; and both previous and cuurent block is zero after
+
+    we probably want support for individual         ; 1=:, 2=$, 3=!, 4=@
+    error messages in the future
+
+    $i[-]$t-$e[-]                                    ; remove flag
+]
+$t[-                                                ; if flag set (no error)
+$i[-]
+read another byte and exit if EOF
+$i[-]$t+$i,+[-$t-]                                  ; in $i or $t (compiler thinks $t)
+$w[- t >]@w $t] $i ]                                ; loop until read EOF == 0/ -1/ no change
 
 
 

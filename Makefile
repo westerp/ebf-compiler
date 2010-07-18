@@ -3,14 +3,14 @@ SVNREPO = https://ebf-compiler.googlecode.com/svn
 INTERPRENTER = beef
 
 
-test: compile
+test: ebft.bf
 	./test.sh
 
 compile: ebft.bf
 
-ebft.bf: ebf.bf
+ebft.bf: ebf.bf ebf.ebf
 	$(INTERPRENTER) ebf.bf < ebf.ebf > ebft.bf
-	diff -wu ebf.bf ebft.bf
+	diff -wu ebf.bf ebft.bf || true
 
 
 ebf.bf:
