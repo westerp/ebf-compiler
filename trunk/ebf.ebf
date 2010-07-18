@@ -84,14 +84,15 @@ $a +++[- $w ----------- $a]                         ; reduce $w with 3*11=33(!)
             $t]>[@t$e++$t->]@w                      ; set error flag if t is not set
   $t] $w
  ]$t [- remove var
-        $e+++$i.$g-                                 ; prnit and reduce g
+        $e+++$i.[-]$g                               ; prnit and reduce g
         $n,.[-<[<<]+[>>]<] @n                       ; read and move to ascii value of variable left
-        $c[<<]>[
-            >[>>]@z$e[-]$c[<<]>                     ; remove error flag (because value is positive)
-            [-]                                     ; reset value
-        ]>[->>]@z                                   ; restore
-
- $t]                                                ; end !
+        $c [<<]>                                    ; if zero it is not defined.
+        [->[>>] @z $t + $e [-] $c [<<]>]            ; copy n to w
+        >[->>]@z                                    ; restored
+        $t[-$i+$g-$t]                               ; copy to i while re4ducing both g and t
+        $g[$e++++$i[-]$g[-]]                        ; t is 0 if g is not 0 we have error
+        $i[-$g+$i]                                  ; restore g
+$t]                                                 ; end !
 check for error
 $t+                                                 ; set flag
 $e[
