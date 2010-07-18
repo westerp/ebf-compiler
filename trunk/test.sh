@@ -18,8 +18,8 @@ for i in $(grep -A9999 "${NAME}NAME" $0);  do
    	 ret=$(echo "$test1" | beef ebft.bf)
    	 tests=$[$tests+1]
     	if [ "$ret" != "$exp" ]; then
-            	if [ "$todo" != "$todo" ]; then 
-	            	echo ERROR $desc: \"$ret\" != \"$exp\"
+            	if [ "$todo" != "todo" ]; then 
+	            	echo ERROR $desc \($test1\): \"$ret\" != proof \"$exp\"
        		 	nok=$[$nok+1]
        		else
 	            	echo warning $desc: \"$ret\" != \"$exp\"
@@ -27,6 +27,9 @@ for i in $(grep -A9999 "${NAME}NAME" $0);  do
        		fi
 	else
 	        ok=$[$ok+1]
+	        if [ "$todo" = "todo" ]; then 
+	        	echo "REMOVE todo from $i"
+	        fi
 	fi
     fi
 done
@@ -40,7 +43,13 @@ exit $nok
 :a;:a;allcation
 >:a$a;>:a$a<;pointer1
 :a:b$b<$b;:a:b$b><$b>;pointer2
-:a:a:a$a;:a:a:a$a;redefine-existing;todo
 :a:b@b$a;:a:b@b$a<;pointer3
-:a<<<<$a;:a<<<<$a;below-zero;todo
-:a:b<<<<$b;:a:b<<<<$b>;below-zero2;todo
+:a<<<<$a;:a<<<<$a;below-zero;
+:a:a;:a:aERROR;redefine-existing;
+:a:b<<<<$b;:a:b<<<<$b>;below-zero2;
+:a:a:a$a;:a:aERROR;redefine-existing;
+@a;@aERROR;at-undefined;
+$a;$aERROR;to-undefined;
+:a!a:a;:a!a:a;dealloc-alloc;
+!a;!aERROR;dealloc-nonalloc;
+
