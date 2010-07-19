@@ -1,0 +1,17 @@
+#summary Implementation thoughts on Macroes and Bracket balancing
+= Macroes and Bracket balancing =
+Why address both at the same time you might say. Well it is not the same thing but it both requires that we carefully rethink data structure. So far we have
+
+|| c-258 || n-258 || ... || c-0||n-0||zero||global||input||tmp||working||adding||position||
+
+==Needs to implement features==
+  * balancing brackets needs a stack. We might get away with a limited one but not preffered.
+  * To implement macro we need a lookup (like n) We might just expand that array to hold extra variable m
+  * To implement macro we need a place for each macro (array of strings)
+  * To implement macro insertion we need to either read the whole text in from start or alternate have input from input or stack. 
+
+||c-32||s-32||...||c-0||s-0||0||-1|| c-256 || n-256 || m-256|| ... || c-0||n-0||m-0||zero||global||macro-count||input||tmp||working||adding||position|| buffer of zeroes||1||inputfile||1||macro1||0||0||macro2||0||0||
+
+This might do, but there are some limitations here.. When the macro is being copied it must be copied forward as well, then at the end copied back. Forthis we probably need 3 zeroes between each.being text we might use -1 as a marker to get by the fact that it will reach both 1 and 0 on it's copying, but never 255...
+
+what about the variables? We might break it when the 254th variable is  allocated? Well. I belive we are not able to use more than 96 (US ASCII) and we will allow more by adding hashing of more than one character by sing single character modulus and multiplier and modulus 251 on the sum. That means we have 4 unused values 252-255 to exploit. Using other carachters in iso-8859-1 than ü, ý, þ, ÿ will work, but not be officially supported.
