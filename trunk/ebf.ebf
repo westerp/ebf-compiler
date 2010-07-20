@@ -13,8 +13,13 @@
 ; By Pål Wester
 ; ]
 
-:c variable crumble
-:n variable value
+ML|crumble|variable|macro|zero|global|input|tmp|working|adding|position|error
+PTR=765:3
+
+
+:c array crumble
+:v variable value
+:m macro
 :z zero
 :g global variable index
 :i input
@@ -23,17 +28,17 @@
 :a adding aide
 :p position
 :e error number
-++++++++[->++++++++<]>                              ; 64
-[->>>>>>>[>>>>>>>>]+[<<<<<<<<]>]                    ; 8*64 = 512
->>>>>>>[->>>>>>>>]                                  ; goto 520
-@i ; indicates that we are on i
+++++++++++[->++++++++++<]>-----                     ; 95
+[->>>>>>>[>>>>>>>>]+[<<<<<<<<]>]                    ; 8*95 = 760
+>>>>>>>[->>>>>>>>]                                  ; goto 768
+@z ; indicates that we are on m
 
 $i ,[                                               ; outer loop. EOF=0
 
 ; copy $i to $w
 [- $t+ $w+ $i ]                                     ; pour $i to $w and $t
 $t [- $i+ $t  ]                                     ; pour $t to $i
-+                                                   ; i=I|t=1|w=I|p=x|n=0|v=0
++                                                   ; i=I|t=1|w=I|p=x
 ; switch
 $a +++[- $w ----------- $a]                         ; reduce $w with 3*11=33(!)
  $w [---                                            ; no, reduce $w with 3($)
@@ -44,33 +49,34 @@ $a +++[- $w ----------- $a]                         ; reduce $w with 3*11=33(!)
       [ --                                          ; no, reduce by 2 (@)
        [ $i . $t- $w [-] ]                          ; reset $t and $w
        $t [-                                        ; in @
-            $e++++$p[-]-$i.$n,.[-<[<<]+[>>]<] @n    ; set error flag. print and move to ascii value of variable left
-            $c [<<]>                                ; move to array
-            [-<<<+>>>>[>>] @z                       ; copy n to p and c-1
-                    $p + $e[-] $c[<<]>              ; plus reset error flag
+            $e++++$p[-]-$i.$v,.[-<[<<<]+[>>>]<<] @v ; set error flag. print and move to ascii value of variable left
+            $c [<<<]>                               ; move to array
+            [-<<<<+>>>>>>[>>>] @z                   ; copy n to p and c-1
+                    $p + $e[-] $c[<<<]>             ; plus reset error flag
                 ]                                   ; end copy
-            <<<[->>>+<<<]>>>>[->>] @z               ; restore original value
+            <<<<[->>>>+<<<<]>>>>>>[->>>] @z         ; restore original value
           $t] $w                                    ; in @ end
       ]$t [- $i.$p+$t ] $w                          ; in > adjusts pos
       ]$t [- $i. $a+$p[-$a-]<[-<]@w $t ] $w         ; in < adjusts pos. Make sure we don't go below 0.
     ]$t [[,----------]++++++++++.[-]] $w            ; in ; removes comment
    ]$t [-                                           ; in :
-            $i.$n,.[-<[<<]+[>>]<] @n                ; move to ascii value of variable left
+            $i.$v,.[-<[<<<]+[>>>]<<] @v             ; move to ascii value of variable left
 
             error checking code for double assignment
-            $c[<<]>[                                ; move to n(i) check if non zero
-              >[>>]@z $e+ $c[<<]>                   ; when non zero go to e and set 1 (: error)
-            [-]]>[>>]@z                             ; back to z
+            $c[<<<]>[                               ; move to n(i) check if non zero
+              >>[>>>]@z $e+ $c[<<<]>                ; when non zero go to e and set 1 (: error)
+            [-]]>>[>>>]@z                           ; back to z
 
-            $g+[- $t+ $c[<<]>+>[>>] @z >]           ; increment g and copy g to t and n
-            $c [<<]>>[->>] @z                       ; clear trail
+            $g+[- $t+ $c[<<<]>+>>[>>>] @z >]        ; increment g and copy g to t and n
+            $c [<<<]>>>[->>>] @z                    ; clear trail
             $t [- $g+ $t]                           ; restore new g
      $t]$w                                          ; in : end
   ]$t [                                             ; move to a ($)
-            $i.[-]$n,.[-<[<<]+[>>]<] @n             ; move to ascii value of variable left
-            $c [<<]>                                ; if zero it is not defined.
-            [-<<<+>>>>[>>] @z $i + $a + $c [<<]>]   ; copy n to i and a and c-1
-            <<<[->>>+<<<]>>>>[->>] @z               ; restore original value
+            $i.[-]$v,.[-<[<<<]+[>>>]<<] @v          ; move to ascii value of variable left
+            $c [<<<]>                               ; if zero it is not defined.
+            [-<<<<+>>>>>>[>>>] @z                   ; copy v to c-1 ...
+              $i + $a + $c [<<<]>]                  ; i and a
+            <<<<[->>>>+<<<<]>>>>>>[->>>] @z         ; restore original value
             <++++++[->++++++++++<]                  ; 60 in z (<)
 
             error checking is i 0 set e to 2 t is still 1
@@ -85,10 +91,10 @@ $a +++[- $w ----------- $a]                         ; reduce $w with 3*11=33(!)
   $t] $w
  ]$t [- remove var
         $e+++$i.[-]$g                               ; prnit and reduce g
-        $n,.[-<[<<]+[>>]<] @n                       ; read and move to ascii value of variable left
-        $c [<<]>                                    ; if zero it is not defined.
-        [->[>>] @z $t + $e [-] $c [<<]>]            ; copy n to w
-        >[->>]@z                                    ; restored
+        $v,.[-<[<<<]+[>>>]<<] @v                    ; read and move to ascii value of variable left
+        $c [<<<]>                                   ; if zero it is not defined.
+        [->>[>>>] @z $t + $e [-] $c [<<<]>]         ; copy n to w
+        >>[->>>]@z                                  ; restored
         $t[-$i+$g-$t]                               ; copy to i while re4ducing both g and t
         $g[$e++++$i[-]$g[-]]                        ; t is 0 if g is not 0 we have error
         $i[-$g+$i]                                  ; restore g
