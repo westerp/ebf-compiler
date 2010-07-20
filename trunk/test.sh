@@ -52,4 +52,4 @@ exit $nok
 $a;$aERROR;to-undefined;
 :a!a:a;:a!a:a;dealloc-alloc;
 !a;!aERROR;dealloc-nonalloc;
-{->+};[->+<];auto-balance;todo
+(->+);[->+<];auto-balance;todo
