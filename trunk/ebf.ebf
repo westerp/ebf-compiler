@@ -165,7 +165,7 @@ $e[
     we probably want support for individual         ; 1=:, 2=$, 3=!, 4=@
     error messages in the future
 
-    $i[-]$e[-]                                    ; remove flag
+    $i[-]$e[-]                                      ; remove flag
 ]
 $t[-                                                ; if flag set (no error)
 $i[-]
@@ -176,10 +176,10 @@ $w[- t >]@w $t] $i ]                                ; loop until read EOF == 0/ 
 ; need to check stack for uneven brackets
 +[-<+]<
     [
-    >>+++++++++[->++++++++<]>---                  ; prints ERROR using previous block
+    >>+++++++++[->++++++++<]>---                    ; prints ERROR using previous block
     .+++++++++++++..---.+++.                        ; and both previous and cuurent block is zero after
     [-]++++++++++.[-]
-    ]
 ]
+
 
 
