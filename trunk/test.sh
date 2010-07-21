@@ -1,5 +1,9 @@
 #!/bin/bash
-
+INTERPRENTER=beef
+if [ "$1" != "" -a "$1" != $INTERPRENTER ]; then
+	INTERPRENTER=$1
+	echo "Using $INTERPRENTER as interprenter"
+fi
 dir=$(dirname $0)
 if [ "$dir" = "" ]; then
 	dir="."
@@ -15,7 +19,7 @@ for i in $(grep -A9999 "${NAME}NAME" $0);  do
    	 exp=$(echo $i| cut -d\; -f2)
    	 desc=$(echo $i| cut -d\; -f3)
    	 todo=$(echo $i| cut -d\; -f4)
-   	 ret=$(echo -n "$test1" | beef ebft.bf)
+   	 ret=$(echo -n "$test1" | $INTERPRENTER  ebft.bf)
    	 tests=$[$tests+1]
     	if [ "$ret" != "$exp" ]; then
             	if [ "$todo" != "todo" ]; then 
@@ -55,3 +59,5 @@ $a;$aERROR;to-undefined;
 (->+);[->+<];auto-balance;
 );]ERROR;auto-balance-error;
 (;[ERROR;auto-balance-missing;
+:b:c!c!b;:b:c!c!b;simple-deallocation-all;
+:a:b:c$c++++(-$b+++++++(-$a+++++++++++))!c!b;:a:b:c$c>>++++[-$b<+++++++[-$a<+++++++++++>]>]!c!b;triple-multiply;

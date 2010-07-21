@@ -4,7 +4,7 @@ INTERPRENTER = beef
 
 
 test: ebft.bf
-	./test.sh
+	./test.sh $(INTERPRENTER)
 
 compile: ebft.bf
 

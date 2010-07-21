@@ -154,7 +154,7 @@ $a +++[- $w ----------- $a]                         ; reduce $w with 3*11=33(!)
         $z[@c - $z]@z                               ; close array
         $t[-$i+$g-$t]                               ; copy to i while re4ducing both g and t
         $g[$e++++$i[-]$g[-]]                        ; t is 0 if g is not 0 we have error
-        $i[-$g+$i]                                  ; restore g
+        $i[-$g+$i]$g-                               ; restore g
 $t]                                                 ; end !
 check for error
 $t+                                                 ; set flag
