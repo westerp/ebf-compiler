@@ -14,7 +14,7 @@
 ; ]
 
 ML|crumble|variable|macro|zero|global|input|tmp|working|adding|position|error
-PTR=765:3
+PTR=1019:3
 
 start array structure
 :c array crumble
@@ -31,9 +31,15 @@ end array structure
 :p position eg the current location
 :e error number
 
->>>+++                                              ; number of variables in array
+>>>+                                                ; a stack of 256 elements
 [-<++++[-<++++++++>]>]<<-                           ; multiplied by 32 and then reduced by 1
 [->>>>>>>[>>>>>>>>]+[<<<<<<<<]>]                    ; 8*95 = 760
+>>>>>>>[->>>>>>>>]                                  ; goto 512 set -1
+<<<->>>                                             ; set -1
+;>> (since we have stack)
+>+++                                                ; number of variables in array
+[-<++++[-<++++++++>]>]<<-                           ; multiplied by 32 and then reduced by 1
+[->>>>>>>[>>>>>>>>]+[<<<<<<<<]>]                    ; multiplied by 8 cells = 760 (3 elements)
 >>>>>>>[->>>>>>>>]                                  ; goto 768
 @z ; indicates that we are on m
 
@@ -46,26 +52,28 @@ $t [- $i+ $t  ]                                     ; pour $t to $i
 ; switch
 $a +++[- $w ----------- $a]                         ; reduce $w with 3*11=33(!)
  $w [---                                            ; no, reduce $w with 3($)
-  [ $a++[- $w----------- $a ] $w                        ; no, reduce $w with 22(:)
-   [ -                                              ; no, reduce by 1 (;)
-    [ -                                             ; no, reuce by 1 (<)
-     [ --                                           ; no, reuce by 2 (>)
-      [ --                                          ; no, reduce by 2 (@)
-       [ $i . $t- $w [-] ]                          ; reset $t and $w
-       $t [-                                        ; in @
-       $e++++$p[-]-$i.$v,.                          ; set error flag. print input, read input to v and output
-            [-$c[@z$c]+[@c$z]@z$v]                  ; open path to array index like input
-            $c [@z$c]@c$v                           ; move to array value
+     [----                                          ; no  reduce $w with 4 "("
+      [-                                            ; no  reduce $w with 1 ")"
+       [ $a++++[- $w---- $a ] $w-                   ; no, reduce $w with 17(:)
+        [ -                                         ; no, reduce by 1 (;)
+         [ -                                        ; no, reuce by 1 (<)
+          [ --                                      ; no, reuce by 2 (>)
+           [ --                                     ; no, reduce by 2 (@)
+            [ $i . $t- $w [-] ]                     ; reset $t and $w
+           $t [-                                    ; in @
+                $e++++$p[-]-$i.$v,.                 ; set error flag. print input, read input to v and output
+                [-$c[@z$c]+[@c$z]@z$v]              ; open path to array index like input
+                $c [@z$c]@c$v                       ; move to array value
                 [- $c@z$c + $z@c$v @v$z[@c$z] @z    ; copy n  to c-1 ...
-                $p + $e[-] $c[@z$c]@c$v             ; p and reset error flag
-                    ]                               ; end copy
-                    $c@z$c[-$z@c$v+$c@z$c]$z@c$v    ; restore original value
+                    $p + $e[-] $c[@z$c]@c$v         ; p and reset error flag
+                ]                                   ; end copy
+                $c@z$c[-$z@c$v+$c@z$c]$z@c$v        ; restore original value
                 $z[@c - $z]@z                       ; close array
           $t] $w                                    ; in @ end
-      ]$t [- $i.$p+$t ] $w                          ; in > adjusts pos
-      ]$t [- $i. $a+$p[-$a-]<[-<]@w $t ] $w         ; in < adjusts pos. Make sure we don't go below 0.
-    ]$t [[,----------]++++++++++.[-]] $w            ; in ; removes comment
-   ]$t [-                                           ; in :
+         ]$t [- $i.$p+$t ] $w                       ; in > adjusts pos
+        ]$t [- $i. $a+$p[-$a-]<[-<]@w $t ] $w       ; in < adjusts pos. Make sure we don't go below 0.
+       ]$t [[,----------]++++++++++.[-]] $w         ; in ; removes comment
+      ]$t [-                                        ; in :
             $i.$v,.                                 ; print input, read input to v and output
             [-$c[@z$c]+[@c$z]@z$v]                  ; open path to array index like input
 
@@ -78,7 +86,46 @@ $a +++[- $w ----------- $a]                         ; reduce $w with 3*11=33(!)
             $c [@z$c]$z[@c - $z] @z                 ; clear trail
             $t [- $g+ $t]                           ; restore new g
      $t]$w                                          ; in : end
-  ]$t [                                             ; move to a ($)
+     ]$t [- #close bracket                          ; in ")"
+           $i[-]                                    ; we need i
+           $w-$t+[-<+]--
+           <<[<]->
+           [-
+             [>]+[->+]-@w
+             $a+$i+
+             +[-<+]->
+           ]
+           <+++[-->++]-                             ; restore mark from -2 to -1
+           [>]+[->+]@w
+
+           $z<++++++[->++++++++++<]                  ; 60 in z (<)
+           $t+
+            error checking is i 0 set e to 2 t is still 1
+            $i[-$t-$a-
+            ; we have new position in i and old in p
+            $w+$p[ $a [-$w-]<[@w-
+            $p[-$z.$p] + $t] $w+$p-]                ; a is smaller than p, eg. <
+            $z++$w-$a[-$z.$a]$z[-]
+            $i[-$p+$i]                              ; set current position
+            $t]>[@t$e+++++$t->]@w                   ; set error flag if t is not set
+            +++++++[-$t+++++++++++++$w]$t++.        ; print "]"
+            [-]                                     ; blank out w
+            $t
+         ] $w                                       ; end ")"
+    ]$t [- open bracket                             ; in "("
+            +++++++[-$i+++++++$t]$i++.              ; convert "(" to "[" by adding 51
+            $a-$w+[-<+]-                            ; seek to -1
+            <[<]+                                   ; mark
+            [>]+[->+]-@a                            ; first zero, then first -1
+
+            $p[-$w++[-<+]-
+                [<]>+
+                [>]+[->+]-@a                        ; first zero, then first -1
+                $p]
+            $a+$w[-$p+$w]
+            $t
+        ] $w                                        ; end "("
+   ]$t [                                            ; move to a ($)
             $i.[-]$v,.                              ; print and zero input, read input to v and output
             [-$c[@z$c]+[@c$z]@z$v]                  ; open path to array index like input
             $c [@z$c]@c$v                           ; if zero it is not defined.
@@ -114,7 +161,7 @@ $t+                                                 ; set flag
 $e[
     $t++++++++[-$w++++++++$t]$w---                  ; prints ERROR using previous block
     .+++++++++++++..---.+++.                        ; and both previous and cuurent block is zero after
-
+    [-]++++++++++.
     we probably want support for individual         ; 1=:, 2=$, 3=!, 4=@
     error messages in the future
 
@@ -126,6 +173,13 @@ read another byte and exit if EOF
 $i[-]$t+$i,+[-$t-]                                  ; in $i or $t (compiler thinks $t)
 $w[- t >]@w $t] $i ]                                ; loop until read EOF == 0/ -1/ no change
 
-
+; need to check stack for uneven brackets
++[-<+]<
+    [
+    >>+++++++++[->++++++++<]>---                  ; prints ERROR using previous block
+    .+++++++++++++..---.+++.                        ; and both previous and cuurent block is zero after
+    [-]++++++++++.[-]
+    ]
+]
 
 
