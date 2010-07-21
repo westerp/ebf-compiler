@@ -10,7 +10,7 @@ Why address both at the same time you might say. Well it is not the same thing b
   * To implement macro we need a place for each macro (array of strings)
   * To implement macro insertion we need to either read the whole text in from start or alternate have input from input or stack. 
 
-||c-32||s-32||...||c-0||s-0||0||-1|| c-256 || n-256 || m-256|| ... || c-0||n-0||m-0||zero||global||macro-count||input||tmp||working||adding||position|| buffer of zeroes||1||inputfile||1||macro1||0||0||macro2||0||0||
+||0||s-251||...||s-0||-1|| c-256 || n-256 || m-256|| ... || c-0||n-0||m-0||zero||global||macro-count||input||tmp||working||adding||position|| buffer of zeroes||1||inputfile||1||macro1||0||0||macro2||0||0||
 
 This might do, but there are some limitations here.. When the macro is being copied it must be copied forward as well, then at the end copied back. Forthis we probably need 3 zeroes between each.being text we might use -1 as a marker to get by the fact that it will reach both 1 and 0 on it's copying, but never 255...
 
