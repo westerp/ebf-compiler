@@ -15,7 +15,7 @@ for i in $(grep -A9999 "${NAME}NAME" $0);  do
    	 exp=$(echo $i| cut -d\; -f2)
    	 desc=$(echo $i| cut -d\; -f3)
    	 todo=$(echo $i| cut -d\; -f4)
-   	 ret=$(echo "$test1" | beef ebft.bf)
+   	 ret=$(echo -n "$test1" | beef ebft.bf)
    	 tests=$[$tests+1]
     	if [ "$ret" != "$exp" ]; then
             	if [ "$todo" != "todo" ]; then 
@@ -52,4 +52,6 @@ exit $nok
 $a;$aERROR;to-undefined;
 :a!a:a;:a!a:a;dealloc-alloc;
 !a;!aERROR;dealloc-nonalloc;
-(->+);[->+<];auto-balance;todo
+(->+);[->+<];auto-balance;
+);]ERROR;auto-balance-error;
+(;[ERROR;auto-balance-missing;
