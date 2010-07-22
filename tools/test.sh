@@ -1,9 +1,34 @@
 #!/bin/bash
+
+#
+# $Id$
+#
+# This file is part of ebf-compiler
+#
+# ebf-compiler is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# ebf-compiler is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+
+
 INTERPRENTER=beef
+EBF=ebft.bf
 if [ "$1" != "" -a "$1" != $INTERPRENTER ]; then
 	INTERPRENTER=$1
 	echo "Using $INTERPRENTER as interprenter"
 fi
+if [ "$2" != "" -a "$2" != $EBF ]; then
+        EBF=$2
+        echo "Using $EBF as ebf-binary"
+fi
+
 dir=$(dirname $0)
 if [ "$dir" = "" ]; then
 	dir="."
@@ -15,14 +40,14 @@ todos=0
 NAME=#TEST
 for i in $(grep -A9999 "${NAME}NAME" $0);  do
     test1=$(echo $i| cut -d\; -f1)
-    if [ "$test1" != "${NAME}NAME" ]; then 
+    if [ "$test1" != "${NAME}NAME" ]; then
    	 exp=$(echo $i| cut -d\; -f2)
    	 desc=$(echo $i| cut -d\; -f3)
    	 todo=$(echo $i| cut -d\; -f4)
-   	 ret=$(echo -n "$test1" | $INTERPRENTER  ebft.bf)
+   	 ret=$(echo -n "$test1" | $INTERPRENTER  $EBF)
    	 tests=$[$tests+1]
     	if [ "$ret" != "$exp" ]; then
-            	if [ "$todo" != "todo" ]; then 
+            	if [ "$todo" != "todo" ]; then
 	            	echo ERROR $desc \($test1\): \"$ret\" != proof \"$exp\"
        		 	nok=$[$nok+1]
        		else
@@ -31,7 +56,7 @@ for i in $(grep -A9999 "${NAME}NAME" $0);  do
        		fi
 	else
 	        ok=$[$ok+1]
-	        if [ "$todo" = "todo" ]; then 
+	        if [ "$todo" = "todo" ]; then
 	        	echo "REMOVE todo from $i"
 	        fi
 	fi
