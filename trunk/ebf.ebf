@@ -1,20 +1,23 @@
 ;[
+; $Id$
+; an extended brainfuck to pure brainfuck compiler
+; for documentation, please go to http://sylwester.no/ebf/
 ;
-;ebf.ebf a bf compiler v1. In addition to existing BF (<>+-,.[])
-;we have current extra commands:
+; ebf-compiler is free software: you can redistribute it and/or modify
+; it under the terms of the GNU General Public License as published by
+; the Free Software Foundation, either version 3 of the License, or
+; (at your option) any later version.
 ;
-; ;  == comment rest of line (no change)
-; !a == deallocate variable a. It is assumed that is is cleared and last variable allocated
-; :a == allocate variable a. It will take any available place
-; $a == move to a
-; @a == indicate that we are at a (usefull for asymetric loops
-; like :a:b:c $b+ $a[ $b- ] either in a or b compiler thinks b $c[ @b - $c ])
+; ebf-compiler is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; GNU General Public License for more details.
 ;
-; By Pål Wester
+; You should have received a copy of the GNU General Public License
 ; ]
 
 ML|crumble|variable|macro|zero|global|input|tmp|working|adding|position|error
-PTR=1019:3
+PTR=1019:3 ; this actually allocates variable 3 but nothing changes since we start with @z
 
 start array structure
 :c array crumble
