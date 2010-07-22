@@ -47,7 +47,7 @@ ebf.bf: ebf-bin-bootstrap.bf
 	@mv ebf.tmp ebf.bf
 
 clean:
-	rm -f ebft.bf ebf.bf *.tmp  *~ ebf-bin-bootstrap.bf
+	rm -rf ebft.bf ebf.bf *.tmp  *~ ebf-bin-bootstrap.bf ebf-compiler-*
 
 replace: ebft.bf test
 	cp ebft.bf ebf.bf
