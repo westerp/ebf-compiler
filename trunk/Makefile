@@ -82,10 +82,11 @@ ebf-bin-bootstrap.bf:
 		echo "Using precompiled binary ebf-bin.bf to bootstrap"; \
 		cp ebf-bin.bf ebf-bin-bootstrap.bf; \
 	elif [ -r ebf-handcompiled.bf ]; then \
-		echo "Using handcompiled (v1.0) binary to bootstrap"; \
-		cp ebf-handcompiled.bf ebf-bin-bootstrap.bf;  \
+		echo "Downloading previous source ebfv1.1.0 to compile it with the very first handcompiled version"; \
+		wget 'http://ebf-compiler.googlecode.com/svn/tags/ebfv1.1.0/ebf.ebf' -O ebf-1.1.0.ebf ; \
+		$(INTERPRENTER) ebf-handcompiled.bf < ebf-1.1.0.ebf > ebf-bin-bootstrap.bf ;\
 	else \
-		echo "No way to bootstrap. need ebf-bin.bf or ebf-handcompiled.bf"; \
+		echo "No way to bootstrap. need ebf-bin.bf or ebf-handcompiled.bf and v1.1.0 to create bootstrapper"; \
 		false ; \
 	fi
 
