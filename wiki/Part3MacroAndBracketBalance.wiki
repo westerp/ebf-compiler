@@ -7,6 +7,7 @@ Why address both at the same time you might say. Well it is not the same thing b
 ==Needs to implement features==
   * balancing brackets needs a stack. We might get away with a limited one but not preffered.
   * To implement macro we need a lookup (like n) We might just expand that array to hold extra variable m
+  * Like balancing brackets if we are to support for going to the tsrting point of the macro we need some sort of nested $ that are not $
   * To implement macro we need a place for each macro (array of strings)
   * To implement macro insertion we need to either read the whole text in from start or alternate have input from input or stack. 
 
