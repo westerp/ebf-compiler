@@ -17,7 +17,7 @@
 ; ]
 
 ML|crumble|variable|macro|zero|global|input|tmp|working|adding|position|error
-PTR=1019:3 ; this actually allocates variable 3 but nothing changes since we start with @z
+PTR=1277|3 ; this actually allocates variable 3 but nothing changes since we start with @z
 
 start array structure
 :c array crumble
@@ -34,13 +34,13 @@ end array structure
 :p position eg the current location
 :e error number
 
->>>+                                                ; a stack of 256 elements
+>>>++                                               ; 2 stacks of 256 elements
 [-<++++[-<++++++++>]>]<<-                           ; multiplied by 32 and then reduced by 1
-[->>>>>>>[>>>>>>>>]+[<<<<<<<<]>]                    ; 8*95 = 760
->>>>>>>[->>>>>>>>]                                  ; goto 512 set -1
+[->>>>>>>[>>>>>>>>]+[<<<<<<<<]>]                    ; 8*63 = 504+8
+>>>>>>>[->>>>>>>>]                                  ; goto 512
 <<<->>>                                             ; set -1
-;>> (since we have stack)
->+++                                                ; number of variables in array
+
+>>>+++                                                ; number of variables in array
 [-<++++[-<++++++++>]>]<<-                           ; multiplied by 32 and then reduced by 1
 [->>>>>>>[>>>>>>>>]+[<<<<<<<<]>]                    ; multiplied by 8 cells = 760 (3 elements)
 >>>>>>>[->>>>>>>>]                                  ; goto 768
@@ -92,13 +92,13 @@ $a +++[- $w ----------- $a]                         ; reduce $w with 3*11=33(!)
      ]$t [- #close bracket                          ; in ")"
            $i[-]                                    ; we need i
            $w-$t+[-<+]--
-           <<[<]->
+           <<<[<<]->>
            [-
-             [>]+[->+]-@w
+             [>>]+[->+]-@w
              $a+$i+
-             +[-<+]->
+             +[-<+]->>
            ]
-           <+++[-->++]-                             ; restore mark from -2 to -1
+           <<+++[-->++]-                            ; restore mark from -2 to -1
            [>]+[->+]@w
 
            $z<++++++[->++++++++++<]                  ; 60 in z (<)
@@ -118,12 +118,12 @@ $a +++[- $w ----------- $a]                         ; reduce $w with 3*11=33(!)
     ]$t [- open bracket                             ; in "("
             +++++++[-$i+++++++$t]$i++.              ; convert "(" to "[" by adding 51
             $a-$w+[-<+]-                            ; seek to -1
-            <[<]+                                   ; mark
-            [>]+[->+]-@a                            ; first zero, then first -1
+            <[<<]+                                  ; mark
+            [>>]+[->+]-@a                           ; first zero, then first -1
 
             $p[-$w++[-<+]-
-                [<]>+
-                [>]+[->+]-@a                        ; first zero, then first -1
+                <[<<]>>+
+                [>>]+[->+]-@a                       ; first zero, then first -1
                 $p]
             $a+$w[-$p+$w]
             $t
