@@ -1,18 +1,32 @@
 #summary Implementation thoughts on Macroes and Bracket balancing
-= Macroes and Bracket balancing =
-Why address both at the same time you might say. Well it is not the same thing but it both requires that we carefully rethink data structure. So far we have
 
-|| c-258 || n-258 || ... || c-0||n-0||zero||global||input||tmp||working||adding||position||
+#summary Implementing bracket balancing
+= implementation of bracket balancing =
 
-==Needs to implement features==
-  * balancing brackets needs a stack. We might get away with a limited one but not preffered.
-  * To implement macro we need a lookup (like n) We might just expand that array to hold extra variable m
-  * Like balancing brackets if we are to support for going to the tsrting point of the macro we need some sort of nested $ that are not $
-  * To implement macro we need a place for each macro (array of strings)
-  * To implement macro insertion we need to either read the whole text in from start or alternate have input from input or stack. 
+We can have nestet bracket and therefor need a stack to handle the positions of closing parenthesis.  So with the current design we have this high level memory map
 
-||0||s-251||...||s-0||-1|| c-256 || n-256 || m-256|| ... || c-0||n-0||m-0||zero||global||macro-count||input||tmp||working||adding||position|| buffer of zeroes||1||inputfile||1||macro1||0||0||macro2||0||0||
+|| array of variable positions with size 255 || crubmle || variable || zero||global||input||tmp||working||adding||position||
 
-This might do, but there are some limitations here.. When the macro is being copied it must be copied forward as well, then at the end copied back. Forthis we probably need 3 zeroes between each.being text we might use -1 as a marker to get by the fact that it will reach both 1 and 0 on it's copying, but never 255...
+A stack should be placed on the left. After doing some statistics I found out that variable use was greater than bracket use. Therefor it should be placed *before* the variable lookup. 
 
-what about the variables? We might break it when the 254th variable is  allocated? Well. I belive we are not able to use more than 96 (US ASCII) and we will allow more by adding hashing of more than one character by sing single character modulus and multiplier and modulus 251 on the sum. That means we have 4 unused values 252-255 to exploit. Using other carachters in iso-8859-1 than ü, ý, þ, ÿ will work, but not be officially supported.
+|| stack ||-1/255|| array of variable positions with size 255 || crubmle || variable || zero||global||input||tmp||working||adding||position||
+
+== Using -1/ as a marker ==
+By doing a {{{ +[-<+]- }}} we do a backward seek until we match -1/255 and restore the value. Having two like this will make the movement from *stack space* to *variable space* easily. This also means that there cannot be 255 in any cells between the markers and 254 cannot be in the stack either. Since the actual limit for once byte variables are 95 and that a hash would be modulus 251+1 the number of positions will never reach 253 or above but individual >'s and <'s might put positions that will cause problems. TYHe fix is to ERROR when below 0 or above 253 is encountered and the next command is not @.
+
+||-1||top||...||bottom||-2|| array || variables || unused space ||
+
+== Macroes ==
+With Macroes we will need several things. 
+
+  * Stack to store return address if one want's to move position back to before the macro started. This will work as a variable only that it has a constant name for each entered macro. 
+  * Extra lookup amongst the array for the macro name. this will ensure we can have a macro named a and a variable named a and when long names come along we will have less chance of collisions.
+  * A variable index like global for macroes. 
+  * A array of indexes of  macroes starting with 0. for copying the macro to input
+  * A area for expanded macro. We might have the whole input file but I really don't think so. every part that reads input should either read from expansion are or , until EOF.
+
+== Where to put it ==
+
+|| stack of brackets(odd) and macro positions(even)||-1|| array of variable positions and macro indexes|| variables || macroes delimited by two cells of 0's ||-1||input buffer||
+
+Input buffer must be set left to right. All macro definition must be read before the first macro is expanded (since we cannot overwrite the input buffer)
