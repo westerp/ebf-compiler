@@ -16,8 +16,8 @@
 ; You should have received a copy of the GNU General Public License
 ; ]
 
-ML|crumble|variable|macro|zero|global|input|tmp|working|adding|position|error
-PTR=1277|3 ; this actually allocates variable 3 but nothing changes since we start with @z
+ML|crumble|variable|macro|zero|global|input|tmp|working|adding|position|error|nooverflow
+PTR=1277|3
 
 start stack structure
 :r macro return address stack
@@ -35,7 +35,7 @@ end array structure
 :i input
 :t temporary must be next to w
 :w working must be between t and a
-:a adding aide mus be next to w
+:a adding aide must be next to w
 :p position eg the current location
 :e error number
 :o overflow flag expect at after this
@@ -79,7 +79,7 @@ $a +++(- $w -----------)                            ; reduce $w with 3*11=33(!)
                 $c@z$c(-$z@c$v+$c@z)$z@c$v          ; restore original value
                 $z(@c-)                             ; close array
               )                                     ; in @ end
-          )$t (- $i.$a+$p+[$a-]$w[@a-$o(-)$w] )     ; in > adjusts pos
+          )$t (- $i.$a+$p+++[$a-]$w[@a-$o(-)$p-$w]$p--); in > adjusts pos
         )$t (- $i. $a+$p[-$a-]$w[@a-$o(-)$w] )      ; in < adjusts pos. Make sure we don't go below 0.
        )$t ((,----------)++++++++++.(-))            ; in ; removes comment
       )$t (-                                        ; in :
@@ -122,8 +122,9 @@ $a +++(- $w -----------)                            ; reduce $w with 3*11=33(!)
             (-)                                     ; blank out w
             )+$i(.(-)$e+)
           )                                         ; end ")"
-    )$t (  open bracket                             ; in "("
-            ++++++(-$i+++++++)$i++.                 ; convert "(" to "[" by adding 51
+    )$t (-  open bracket                             ; in "("
+            $o((-)
+            $t+++++++(-$i+++++++)$i++.(-)            ; convert "(" to "[" by adding 51
             $a-$w+[-<+]-@d                          ; seek to -1
             $b @r(@d) +                             ; mark
             @d(@r)+[->+]-@a                         ; first zero, then first -1
@@ -133,8 +134,10 @@ $a +++(- $w -----------)                            ; reduce $w with 3*11=33(!)
                 @d(@r)+[->+]-@a                     ; first zero, then first -1
               )
             $a+$w(-$p+)
+            )+$i(.(-)$e+)
         )                                           ; end "("
    )$t (                                            ; move to a ($)
+            $o((-)
             $i.(-)$v,.                              ; print and zero input, read input to v and output
             $v(-$c(@z)+@z(@c))                      ; open path to array index like input
             $c(@z)                                  ; if zero it is not defined.
@@ -153,6 +156,7 @@ $a +++(- $w -----------)                            ; reduce $w with 3*11=33(!)
             $i(-$p+)                                ; set current position
 
             $t]>[@t$e++$t->]@w                      ; set error flag if t is not set
+            )+$i(.,.(-)$e+)
         )
  )$t (- remove var
         $e+++                                       ; set error flag
