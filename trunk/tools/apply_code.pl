@@ -31,15 +31,18 @@ while(<IMG>)
   {
     #print $i;
     if( $i eq '#' ){
-      print $code[$index];
-      $index++;
-      print $i if( $index == $mod );
+        if( $index == $mod ){
+            print $i;
+        } else {
+            print $code[$index];
+            $index++;
+        }
     } else {
       print $i;
     }
   }
 }
-if( $index != $mod )
+if( $index <= $mod )
 {
  my $c=0;
  while( $index != $mod )
