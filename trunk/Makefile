@@ -16,22 +16,27 @@
 # You should have received a copy of the GNU General Public License
 
 SVNREPO = https://ebf-compiler.googlecode.com/svn
-INTERPRENTER = beef
-DESIGN = structure-cloud.txt
+INTERPRENTER = bf
+DESIGN = lamp-genie.txt
 
 all: 	test test-bin
 
-test: 	test.tmp
+test-interprenters:
+	make test INTERPRENTER=bf
+	make test INTERPRENTER=beef
+	make test INTERPRENTER=bf1.pl
 
-test.tmp: ebft.bf
+test: 	$(INTERPRENTER).test.tmp
+
+$(INTERPRENTER).test.tmp: ebft.bf tools/test.sh
 	tools/test.sh $(INTERPRENTER) ebft.bf
-	@touch test.tmp
+	@touch $(INTERPRENTER).test.tmp
 
-test-bin: test-bin.tmp
+test-bin: $(INTERPRENTER).test-bin.tmp
 
-test-bin.tmp: ebf-bin.bf
+$(INTERPRENTER).test-bin.tmp: ebf-bin.bf tools/test.sh
 	tools/test.sh $(INTERPRENTER) ebf-bin.bf
-	@touch test-bin.tmp
+	@touch $(INTERPRENTER).test-bin.tmp
 
 compile: ebft.bf
 
@@ -90,5 +95,5 @@ ebf-bin-bootstrap.bf:
 		false ; \
 	fi
 
-.PHONY: clean version
+.PHONY: clean version test-interprenters
 

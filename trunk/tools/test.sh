@@ -18,10 +18,10 @@
 # You should have received a copy of the GNU General Public License
 
 
-INTERPRENTER=beef
+INTERPRENTER="bf"
 EBF=ebft.bf
-if [ "$1" != "" -a "$1" != $INTERPRENTER ]; then
-	INTERPRENTER=$1
+if [ "$1" != "" -a "$1" != "$INTERPRENTER" ]; then
+	INTERPRENTER="$1"
 	echo "Using $INTERPRENTER as interprenter"
 fi
 if [ "$2" != "" -a "$2" != $EBF ]; then
@@ -41,28 +41,30 @@ NAME=#TEST
 for i in $(grep -A9999 "${NAME}NAME" $0);  do
     test1=$(echo $i| cut -d\; -f1)
     if [ "$test1" != "${NAME}NAME" ]; then
-   	 exp=$(echo $i| cut -d\; -f2)
-   	 desc=$(echo $i| cut -d\; -f3| sed 's/\-/ /g')
-   	 todo=$(echo $i| cut -d\; -f4)
-   	 ret=$(echo -n "$test1" | $INTERPRENTER  $EBF)
-   	 tests=$[$tests+1]
-    	if [ "$ret" != "$exp" ]; then
-            	if [ "$todo" != "todo" ]; then
-	            	echo ERROR $desc \($test1\): \"$ret\" != proof \"$exp\"
-       		 	nok=$[$nok+1]
-       		else
-	            	echo warning $desc: \"$ret\" != \"$exp\"
-       			todos=$[$todos+1]
-       		fi
-	else
-	        ok=$[$ok+1]
-	        if [ "$todo" = "todo" ]; then
-	        	echo "REMOVE todo from $i"
-	        fi
-	fi
+        exp=$(echo $i| cut -d\; -f2)
+        desc=$(echo $i| cut -d\; -f3| sed 's/\-/ /g')
+        todo=$(echo $i| cut -d\; -f4)
+        ret=$(echo -n "$test1" | $INTERPRENTER  $EBF)
+        tests=$[$tests+1]
+        echo -en "\r                                                                            \r"
+        echo -en "test $tests: $desc"
+        if [ "$ret" != "$exp" ]; then
+                if [ "$todo" != "todo" ]; then
+                    echo ERROR $test1: \"$ret\" != proof \"$exp\"
+                nok=$[$nok+1]
+            else
+                    echo warning $desc: \"$ret\" != \"$exp\"
+                todos=$[$todos+1]
+            fi
+        else
+                ok=$[$ok+1]
+                if [ "$todo" = "todo" ]; then
+                    echo "REMOVE todo"
+                fi
+        fi
     fi
 done
-
+echo -e "\r                                                                            "
 echo "we had $tests tests"
 echo "$ok successful tests"
 echo "$todos known limitations"
@@ -97,3 +99,14 @@ $a;$aERROR;to-undefined;
 :a:b<<<<@a$b;:a:b<<<<@a$b>;below-zero2-at;
 :a<@a();:a<@a[];overflow-open-at;
 :a(<@a);:a[<@a];overflow-close-at;
+:b{a$a};:b;macro-definition;
+:b{a$a}{a$a};:bERROR;macro-redefinition-error;
+{a....;;macro-definition-not-terminated;
+{aba}&a;&aba;macro-expansion;
+{aba}{bba}&b;&bba;macro-expansion;
+{a:a}&a>$a;&a:a>$a<;macro-create-var
+{x!q}&x;&x!qERROR;macro-dealloc-nonalloc;
+{x@a}:a&x;:a&x@a;macro-at;
+{x@a}:a(>>>&x);:a[>>>&x@a];macro-at-loop;
+{x&b}{b$a}:a>&x;:a>&x&b$a<;macro-call-macro;
+{p:a:b:c$c++++(-$b+++++++(-$a+++++++++++))!c!b}&p;&p:a:b:c$c>>++++[-$b<+++++++[-$a<+++++++++++>]>]!c!b;macro-triple-multiply;

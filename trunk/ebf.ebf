@@ -16,7 +16,7 @@
 ; You should have received a copy of the GNU General Public License
 ; ]
 
-ML|crumble|variable|macro|zero|global|input|tmp|working|adding|position|error|nooverflow
+ML|crumble|variable|macro|zero|global|global_macro|input|tmp|working|adding|position|error|nooverflow|macro_number|flag|zero|macro_area|input_area|tmp|wrk
 PTR=1277|3
 
 start stack structure
@@ -32,13 +32,23 @@ end array structure
 
 :z zero indicates end of array
 :g global variable index
+:G global macro index
 :i input
-:t temporary must be next to w
+:t temporary must be next to w and i
 :w working must be between t and a
 :a adding aide must be next to w
 :p position eg the current location
 :e error number
 :o overflow flag expect at after this
+:B n bytes written from macro
+:F flag
+:Z zero
+
+macros area
+:M Macro area
+
+input area with bytes written from ne or more macros
+:I Input area
 
 >>>++                                               ; 2 stacks of 256 elements
 (-<++++(-<++++++++))<<-                             ; multiplied by 32 and then reduced by 1
@@ -51,7 +61,7 @@ end array structure
 [->>>>>>>[>>>>>>>>]+[<<<<<<<<]>]                    ; multiplied by 8 cells = 760 (3 elements)
 >>>>>>>[->>>>>>>>]                                  ; goto 768
 @z ; indicates that we are on m
-$o+
+$o+$M--
 $i ,(                                               ; outer loop. EOF=0
 
 ; copy $i to $w
@@ -61,16 +71,76 @@ $t(- $i+)                                           ; pour $t to $i
 ; switch
 $a +++(- $w -----------)                            ; reduce $w with 3*11=33(!)
  $w (---                                            ; no, reduce $w with 3($)
-     (----                                          ; no  reduce $w with 4 "("
-      (-                                            ; no  reduce $w with 1 ")"
-       ( $a++++(- $w---- ) $w-                      ; no, reduce $w with 17(:)
-        ( -                                         ; no, reduce by 1 (;)
-         ( -                                        ; no, reuce by 1 (<)
-          ( --                                      ; no, reuce by 2 (>)
-           ( --                                     ; no, reduce by 2 (@)
-            ((-) $i . $t- )                         ; reset $t and $w
+     (--                                            ; no, reduce $w with 2 (&)
+      (--                                           ; no  reduce $w with 2 "("
+       (-                                           ; no  reduce $w with 1 ")"
+        ( $a++++(- $w---- ) $w-                     ; no, reduce $w with 17(:)
+         ( -                                        ; no, reduce by 1 (;)
+          ( -                                       ; no, reuce by 1 (<)
+           ( --                                     ; no, reuce by 2 (>)
+            ( --                                    ; no, reduce by 2 (@)
+             ( $a+++++++(- $w--------) $w---        ; no, reduce by 59 ({)
+              ((-) $i . $t- )                       ; reset $t and $w
+             $t (-                                  ; in {
+
+                todo check that B is zero
+                open macro bracket
+                $v,                                 ; read input into v. macro definitions cannot come from macroes
+                $v(-$c(@z)+@z(@c))                  ; open path to array index like input
+
+                error checking code for double assignment
+                $c(@z)@c$m((-)                      ; move to n(i) check if non zero
+                $z(@c) $e+ $c(@z)@c)                ; when non zero go to e and set 1 (: error)
+                $z(@c)                              ; back to z
+
+                $G+(- $t+ $c(@z)@c$m+$z(@c) )       ; increment G and copy g to t and n
+                $c(@z)$z(@c-)                       ; clear trail
+                $t(- $G+)                           ; restore new G
+
+                |B|F|Z|test|0|0|test2|0|0
+                $M>>[[>]>>>]
+
+                @i to make this easy we assume we are at i
+                $t+$i,(
+                    $t+++++++(-$i-------)+$i---     ; reduce by 59 (;)
+                    (>+++++++(-<--------)+<--       ; reduce by 66 (})
+                      ( increase by 125
+                        $t++++++++++(-$i+++++++++++); increase by 121
+                        $i++++>@i                   ; 4 == 125
+                        $w+
+                      )$t (-                        ; in }
+                          $i(-)
+                        )
+                    )$t(-                           ; in ; ignore everything until cr
+                        $i+(,----------)            ; read until cr
+                        ++++++++++
+                        >@i
+                        $w+
+                    )
+                    $w(-$t+$i,
+                        +[-$t-]$w[@t-$w]
+                        $t+
+                    )
+                    $i
+                )
+                ++[--<++]--@M
+
+           ))
            $t (-                                    ; in @
-                $o(-)+$e++++$p(-)-$i.$v,.           ; set error flag. print input, read input to v and output
+                $i.                                 ; set error flag. print input,
+                read input to v and output
+                $F+                                 ; set flag
+                $B[-                                 ; if bytes set in buffer
+                $t->+[->+]-->                       ; set 255 to t then move to first 255 on the right set to 254 move right
+                [[>]- <                             ; move right until 0 (to the right of data) set to 255
+                [- <+[-<+]-@t$v+$w+[->+]-<]         ; copy from oldest data position to v
+                >[+]]                               ; move to 255 and reset
+                ++[--<++]-<                         ; move to 254 marker set to 255
+                +[-<+]@t                            ; move to t and reset input is in i
+                $F-]                                ; reset o
+                $Z[@F- $v, $Z]                      ; move to e if set it is o and we need to read v from stdin since buffer was empty
+                $v.                                 ; output v
+                $o(-)+$e++++$p(-)-                  ; set overflow to 1 error and p to 255/-1
                 $v(-$c(@z)+@z(@c))                  ; open path to array index like input
                 $c(@z)                              ; move to array value
                 $v(- $c@z$c + $z@c$v $z(@c)         ; copy n  to c-1 ...
@@ -83,13 +153,26 @@ $a +++(- $w -----------)                            ; reduce $w with 3*11=33(!)
         )$t (- $i. $a+$p[-$a-]$w[@a-$o(-)$w] )      ; in < adjusts pos. Make sure we don't go below 0.
        )$t ((,----------)++++++++++.(-))            ; in ; removes comment
       )$t (-                                        ; in :
-            $i.$v,.                                 ; print input, read input to v and output
+            $i.                                     ; print input,
+                read input to v and output
+                $F+                                 ; set flag
+                $B[-                                 ; if bytes set in buffer
+                $t->+[->+]-->                       ; set 255 to t then move to first 255 on the right set to 254 move right
+                [[>]- <                             ; move right until 0 (to the right of data) set to 255
+                [- <+[-<+]-@t$v+$w+[->+]-<]         ; copy from oldest data position to v
+                >[+]]                               ; move to 255 and reset
+                ++[--<++]-<                         ; move to 254 marker set to 255
+                +[-<+]@t                            ; move to t and reset input is in i
+                $F-]                                ; reset o
+                $Z[@F- $v, $Z]                      ; move to e if set it is o and we need to read v from stdin since buffer was empty
+                $v.                                 ; output v
+
             $v(-$c(@z)+@z(@c))                      ; open path to array index like input
 
             error checking code for double assignment
             $c(@z)@c$v((-)                          ; move to n(i) check if non zero
-              $z@z(@c) $e+ $c(@z)@c)                ; when non zero go to e and set 1 (: error)
-            $z@z(@c)                                ; back to z
+              $z(@c) $e+ $c(@z)@c)                ; when non zero go to e and set 1 (: error)
+            $z(@c)                                ; back to z
 
             $g+(- $t+ $c(@z)@c$v+$z(@c) )           ; increment g and copy g to t and n
             $c(@z)$z(@c-)                           ; clear trail
@@ -136,9 +219,68 @@ $a +++(- $w -----------)                            ; reduce $w with 3*11=33(!)
             $a+$w(-$p+)
             )+$i(.(-)$e+)
         )                                           ; end "("
+   )$t (- do macro                                 ; in &
+            $i.(-)$e+                               ; print out i. set error flag
+            read input to v and output
+            $F+                                     ; set flag
+            $B[-                                     ; if bytes set in buffer
+            $t->+[->+]-->                           ; set 255 to t then move to first 255 on the right set to 254 move right
+            [[>]- <                                 ; move right until 0 (to the right of data) set to 255
+            [- <+[-<+]-@t$v+$w+[->+]-<]             ; copy from oldest data position to v
+            >[+]]                                   ; move to 255 and reset
+            ++[--<++]-<                             ; move to 254 marker set to 255
+            +[-<+]@t                                ; move to t and reset input is in i
+            $F-]                                    ; reset o
+            $Z[@F- $v, $Z]                          ; move to e if set it is o and we need to read v from stdin since buffer was empty
+            $v.                                     ; output v
+
+            $v(-$c(@z)+@z(@c))                      ; open path to array index like input
+            $c(@z)                                  ; move to array value
+            $m(- $c@z$c + $z@c$v $z(@c)             ; copy n  to c-1 ...
+                $Z + $e(-) $c(@z)                   ; Z and reset error flag
+            )                                       ; end copy
+            $c@z$c(-$z@c$m+$c@z)$z@c$v              ; restore original value
+            $z(@c-)                                 ; close array
+
+            $Z-(- $I>
+                [[>]>>]<<+++[--<++]--@M
+              )
+            $I >[[>]>>]<<->>>                       ; set first zero to 255
+            [[>]>>>]                                ; move to last element
+            +>[<-
+                >-[>]>-<<[<]                        ; set next byte to input to 255.. we now have M=255|......|0|macrocontents|255|0|0|......|contentstart=254|.....|0|255.
+            ]<[-
+                >-->>-<<<<
+            ]
+            +[-<+]-
+            <[
+                report one byte to B
+                ++[--<++]--@M$B+$I+[->+]-<
+
+                [->>++[->+]-<++[-<+]-<]             ; copy byte to next byte and end of buffer
+                >>+[->+]>-<+[-<+]<-<]               ; move 255 to new open space and repeat |0*|0|255|macrocontents|0|nextmacro
+            >+>>[ [-<<+>>]>]                        ; copy back to |0*|macrocontents|0|0|0|nextmacro
+            <<->+[->+]++[--<++]-<+[-<+]-            ; seek back to cuuent array macro_area
+            ++[-<[<]<<]@Z
+        )                                           ; end &
    )$t (                                            ; move to a ($)
             $o((-)
-            $i.(-)$v,.                              ; print and zero input, read input to v and output
+            $i.(-)                                  ; print and zero input,
+
+                read input to v and output
+                $F+                                 ; set flag
+                $B[-                                 ; if bytes set in buffer
+                $t-->+[->+]-->                       ; set 255 to t then move to first 255 on the right set to 254 move right
+                [[>]- <                             ; move right until 0 (to the right of data) set to 255
+                [- <+[-<+]-@t$v+$w+[->+]-<]         ; copy from oldest data position to v
+                >[+]]                               ; move to 255 and reset
+                ++[--<++]-<                         ; move to 254 marker set to 255
+                +[-<+]@t+                           ; move to t and reset input is in i
+                $F-]                                ; reset o
+                $Z[@F- $v, $Z]                      ; move to e if set it is o and we need to read v from stdin since buffer was empty
+                $v.                                 ; output v
+
+
             $v(-$c(@z)+@z(@c))                      ; open path to array index like input
             $c(@z)                                  ; if zero it is not defined.
             $v(- $c@z$c+ $z@c$v@v$z @z(@c)          ; copy v to c-1 ...
@@ -158,9 +300,23 @@ $a +++(- $w -----------)                            ; reduce $w with 3*11=33(!)
             $t]>[@t$e++$t->]@w                      ; set error flag if t is not set
             )+$i((-)$t-$e+)
         )
- )$t (- remove var
+ )$t (- remove var ; !
         $e+++                                       ; set error flag
-        $i.(-)$v,.                                  ; print and zero input, read input to v and output
+        $i.(-)                                      ; print and zero input
+
+                read input to v and output
+                $F+                                 ; set flag
+                $B[-                                 ; if bytes set in buffer
+                $t->+[->+]-->                       ; set 255 to t then move to first 255 on the right set to 254 move right
+                [[>]- <                             ; move right until 0 (to the right of data) set to 255
+                [- <+[-<+]-@t$v+$w+[->+]-<]         ; copy from oldest data position to v
+                >[+]]                               ; move to 255 and reset
+                ++[--<++]-<                         ; move to 254 marker set to 255
+                +[-<+]@t                            ; move to t and reset input is in i
+                $F-]                                ; reset o
+                $Z[@F- $v, $Z]                      ; move to e if set it is o and we need to read v from stdin since buffer was empty
+                $v.                                 ; output v
+
         $v(-$c(@z)+@z(@c))                          ; open path to array index like input
         $c(@z)                                      ; if zero it is not defined.
         $v(- $z(@c) $t + $e (-) $c(@z) )            ; copy n to w
@@ -182,9 +338,22 @@ $e(
     -<+[-<+]-<(-)<(-)>>>+[->+]@e
 )
 $t(-                                                ; if flag set (no error)
-$i(-)
 read another byte and exit if EOF
-$i(-)$t+$i,+[-$t-]                                  ; in $i or $t (compiler thinks $t)
+$i(-)
+
+$F+                                                 ; set flag
+$B[-                                                 ; if bytes set in buffer
+ $t->+[->+]-->                                      ; set 255 to t then move to first 255 on the right set to 254 move right
+ [[>]- <                                            ; move right until 0 (to the right of data) set to 255
+ [- <+[-<+]-@t$i+$w+[->+]-<]                        ; copy from oldest data position to i
+ >[+]]                                              ; move to 255 and reset
+ ++[--<++]-<                                        ; move to 254 marker set to 255
+ +[-<+]@t                                           ; move to t and reset input is in i
+$F-]                                                ; reset o
+$Z[@F- $i, $Z]                                      ; move to e if set it is o and we need to read i from stdin since buffer was empty
+$t+                                                 ; need to set t
+$i+                                                 ; inc $i
+[-$t-]                                              ; in $i or $t (compiler thinks $t)
 $w[- t >]@w ))                                      ; loop until read EOF == 0/ -1/ no change
 
 ; need to check stack for uneven brackets
