@@ -32,7 +32,7 @@ while(<IMG>)
     #print $i;
     if( $i eq '#' ){
         if( $index == $mod ){
-            print $i;
+            print "~";
         } else {
             print $code[$index];
             $index++;
