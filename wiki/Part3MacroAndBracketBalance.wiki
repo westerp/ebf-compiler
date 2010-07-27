@@ -23,10 +23,10 @@ With Macroes we will need several things.
   * Extra lookup amongst the array for the macro name. this will ensure we can have a macro named a and a variable named a and when long names come along we will have less chance of collisions.
   * A variable index like global for macroes. 
   * A array of indexes of  macroes starting with 0. for copying the macro to input
-  * A area for expanded macro. We might have the whole input file but I really don't think so. every part that reads input should either read from expansion are or , until EOF.
+  * A area for expanded macro. To save memory we only have expanded macroes there and when there are no bytes in buffer ebf will read from stdin.
 
 == Where to put it ==
 
-|| stack of brackets(odd) and macro positions(even)||-1|| array of variable positions and macro indexes|| variables || macroes delimited by two cells of 0's ||-1||input buffer||
+|| stack of brackets(odd) and macro positions(even)||-1|| array of variable positions and macro indexes|| variables || macroes delimited by 3 cells of 0's ||-1||input buffer||
 
 Input buffer must be set left to right. All macro definition must be read before the first macro is expanded (since we cannot overwrite the input buffer)
