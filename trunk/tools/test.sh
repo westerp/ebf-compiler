@@ -110,3 +110,6 @@ $a;$aERROR;to-undefined;
 {x@a}:a(>>>&x);:a[>>>&x@a];macro-at-loop;
 {x&b}{b$a}:a>&x;:a>&x&b$a<;macro-call-macro;
 {p:a:b:c$c++++(-$b+++++++(-$a+++++++++++))!c!b}&p;&p:a:b:c$c>>++++[-$b<+++++++[-$a<+++++++++++>]>]!c!b;macro-triple-multiply;
+&a;&aERROR;macro-undefined-macro;
+{atest&b}&a;&atest&bERROR;macro-call-undefined-macro;
+a{a{bb}};aERROR;macro-definition-in-macro-definition-error;
