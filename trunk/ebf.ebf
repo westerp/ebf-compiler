@@ -97,8 +97,8 @@ $a +++(- $w -----------)                            ; reduce $w with 3*11=33(!)
 
                 |B|F|Z|test|0|0|test2|0|0
                 $M>>[[>]>>>]
-                >[-]<                               ; remove marker
-                @i to make this easy we assume we are at i
+                >[-]                                ; remove marker
+                @t to make this easy we assume we are at t
                 $t+$i,(
                     $t+++++++(-$i-------)+$i---     ; reduce by 59 (;)
                     (>+++++++(-<--------)+<         ; reduce by 64 ({)
@@ -198,9 +198,9 @@ $a +++(- $w -----------)                            ; reduce $w with 3*11=33(!)
            $z<++++++[->++++++++++<]                  ; 60 in z (<)
            $t+
             error checking is i 0 set e to 2 t is still 1
-            $i[-$t-$a-
+            $i[-$t-$w+$a-
             ; we have new position in i and old in p
-            $w+$p(- $a [-$w-]<[@w-
+            $p(- $a [-$w-]<[@w-
             $p+(-$z.) $t] $w+$p)                    ; a is smaller than p, eg. <
             $z++$w-$a(-$z.)$z(-)
             $i(-$p+)                                ; set current position
@@ -264,8 +264,8 @@ $a +++(- $w -----------)                            ; reduce $w with 3*11=33(!)
                 [->>++[->+]-<++[-<+]-<]             ; copy byte to next byte and end of buffer
                 >>+[->+]>-<+[-<+]<-<]               ; move 255 to new open space and repeat |0*|0|255|macrocontents|0|nextmacro
             >+>>[ [-<<+>>]>]                        ; copy back to |0*|macrocontents|0|0|0|nextmacro
-            <<->+[->+]++[--<++]-<+[-<+]-            ; seek back to cuuent array macro_area
-            ++[-<[<]<<]@Z)
+            <<->+[->+]++[--<++]-<+[-<+]             ; seek back to cuuent array macro_area
+            +[-<[<]<<]@Z)
         )                                           ; end &
    )$t (                                            ; move to a ($)
             $o((-)
@@ -294,9 +294,9 @@ $a +++(- $w -----------)                            ; reduce $w with 3*11=33(!)
             <++++++(->++++++++++)                   ; 60 in z (<)
 
             error checking is i 0 set e to 2 t is still 1
-            $i[-$t-$a-
+            $i[-$t-$w+$a-
             ; we have new position in i and old in p
-            $w+$p( $a [-$w-]<[@w-
+            $p( $a [-$w-]<[@w-
                 $p[-$z.$p] + $t] $w+$p-)            ; a is smaller than p, eg. <
             $z++$w-$a(-$z.)$z(-)
             $i(-$p+)                                ; set current position
