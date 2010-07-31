@@ -1,0 +1,687 @@
+#!/usr/bin/perl -W
+# $Id$
+#
+# This file is part of ebf-compiler package
+#
+# ebf-compiler is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# ebf-compiler is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+
+
+
+use strict;
+use Getopt::Long;
+use Config;
+use Cwd 'abs_path';
+use Digest::MD5 qw(md5_hex);
+
+my $arch_bits = 32;
+my $arch_mask = 0xffffffff;
+# what use do we have for 64 bit brainfuck?
+if( $Config{archname} =~ /^x86_64/ ) {
+    $arch_bits = 64;
+    $arch_mask <<=32;
+    $arch_mask |=0xfffffff;
+}
+my $bit_size  = 0;      # standard bit size is undefined
+my $num_cells = 0;      # set a memory limit. 0 == unlimited
+my $optimizer = 99;     # werther or not we want to print out optimized brainfuck code
+my $optimizer_stat = 0; # optimizer statictics info
+my $debugger = 0;       # creates a function with a debugging feature
+my $help = 0;           # help
+my $print_brainfuck = 0;# print optimized brainfuck code_match
+my $compiler_optimizer = 1; # optimizes code sections
+my $print_perl = 0;     # prints generated perl code and exit
+my $line_numbers = 0;   # when printing  code.
+my $force_perl = 0;
+GetOptions( 'bits|b=i' => \$bit_size, 'memory|cells|c=i' => \$num_cells,
+            'bf|print-brainfuck' => \$print_brainfuck, 'print|p' => \$print_perl,
+            'optimize-level|optimize|o=i{0,1}' => \$optimizer,
+	    'perl' => \$force_perl,
+            'stats|s' => \$optimizer_stat, 'debug|d!' => \$debugger,
+            'help|h' => \$help, 'fuzzy!' => \$compiler_optimizer,
+            'l|line' => \$line_numbers  );
+
+
+my $filename = @ARGV ? abs_path($ARGV[0]) : '';
+#my ($dirpart, $filepart) =  $filename =~ /^(.*)\/([^\/]+)$/;
+$filename =~  s/^(.*)\///;
+$filename =~  s/\W/_/;
+
+$print_perl = 1 if( $line_numbers );
+
+my $ver = '$Id$';
+my ($progname) = $0 =~ m/.*\/(.*)/;
+
+if( $help ) {
+    print <<eof;
+Usage: $progname brainfuck-file.b
+
+$progname is a Just in time BrainFuck to perl compiler
+$ver
+
+-b, --bits         bit size for cells. default is unset(dynamic).
+                   You may go as fas as your architecture (32/64)
+
+-c, --memory,      how many cells should be available for the
+--cells            perl process to run on. default unlimited
+
+-o, --optimize,    set optimization level on brainfuck code
+--optimize-level   3 is obligatory when compiling to perl
+
+-s, --stats        print out optimizer statictics
+
+--print-brainfuck  will print out optimized brainfuck and exit
+--bf
+
+-p, --print        will print out perl code and exit.
+-l, --line         with line numbers
+
+--no-fuzzy         do not optimize code segments (join brainfuck commands)
+
+-d, --debug        adds stepping-functionality to the code
+
+--perl             force perl (no C). only usefull when debug is offset
+
+--help             this page
+eof
+    exit(0);
+}
+
+
+my $bit_mask = ( $bit_size ? (-1&$arch_mask)>>($arch_bits-$bit_size) : 0);
+
+# read in whole file
+my $code = '';
+while( <> )
+{
+    $code.=$_;
+}
+
+my @optimizer = ();
+my $optimizer_operation = 1;
+my $optimizer_previous = 0;
+
+# prints code
+sub mprint {
+    my $code = $_[0];
+    $code =~ s/z/[-]/g;
+    $code =~ s/Z/[+]/g;
+    print $code;
+}
+
+# verbose stuff
+sub doneop {
+    my $line = "$optimizer_operation. $_[0]: ";
+    $line .= "." x (50-length($line));
+    my $len = length $code;
+    if( $optimizer_operation > 3 && $len < $optimizer_previous ) {
+        $optimizer_previous = $len;
+        $len .= '*';
+    }
+    else {
+        $optimizer_previous = $len;
+    }
+
+    print STDERR "$line$len\n" if( $optimizer_stat );
+    mprint($code) if( $optimizer == $optimizer_operation && $print_brainfuck );
+    $optimizer_operation++;
+}
+
+print STDERR "optmizing results\n" if( $optimizer_stat > 0);
+# just for kicks. the gross file size
+doneop('original code size');
+
+# remove comments
+$code =~ s/[^\Q[]+-<>,.\E]+//g;
+doneop('original without comments');
+
+# make clear-command
+$code =~ s/\Q[-]\E/z/g;
+$code =~ s/\Q[+]\E/Z/g;
+my $compact_size = length $code;
+doneop('replaced clear (ideally the smallest number)');
+
+if( $optimizer > $optimizer_operation ) {
+    # remove beginning []s and [] right after other []/[-]
+    my $prev;
+    do {
+        $prev = length $code;
+        $code =~ s/^([\Q><.z\E]*)(\[(?:[^\Q[]\E]++|(?2))*\])/$1/i;
+    } while( $prev != length $code );
+    do {
+        $prev = length $code;
+        $code =~ s/([z\]])(\[(?:[^\Q[]\E]++|(?2))*\])/$1/i;
+    } while( $prev != length $code );
+    doneop('removed redundant []s');
+}
+
+if( $optimizer > $optimizer_operation ) {
+    # remove <> >< +- and -+
+    my $oldcode;
+    do {
+        $oldcode = $code;
+        $code =~ s/(?:\+\-|\-\+|<>|><)//g;
+    } while ( $oldcode ne $code );
+    doneop('removed <> >< +- -+');
+}
+
+if( $optimizer > $optimizer_operation ) {
+    #remove +/- in front of Zero
+    $code =~ s/[\Q+-\E]+(?=z)//gi;
+    doneop('removed +/- in front of [-]/[+]');
+}
+
+if( $optimizer > $optimizer_operation ) {
+    # remove ><+- after output
+    $code =~ s/[\Qz<>+-\E]+$//ig;
+    doneop('removed [-]<>+- in the end of a program');
+}
+
+if( $optimizer > $optimizer_operation ) {
+
+    # heavy one replaces
+    # >+<-> => ->+
+    my $code_to_process = $code;
+    $code = '';
+    while( $code_to_process =~ m/(?:(\>+)([zZ\+\-,.]+)(\<+)([zZ\+\-,.]+)(\>+)|(\<+)([zZ\+\-,.]+)(\>+)([zZ\+\-,.]+)(\<+))/p )
+    {
+	my ( $s1,  $s2, $s3, $s4, $s5 );
+        if( ! defined $1 ) {
+            $s1 = $6; $s2 = $7; $s3 = $8; $s4 = $9; $s5 = $10;
+        } else {
+            $s1 = $1; $s2 = $2; $s3 = $3; $s4 = $4; $s5 = $5;
+        }
+
+        $code .= ${^PREMATCH};
+        my $redundant_length = length $s3;
+        if( length $s1 >= $redundant_length && length $s5 >= $redundant_length &&  ( ! $s4 =~ m/[\Q,.\E]/  || ! $s2 =~ m/[\Q,.\E]/ ) ) {
+            #>>>|>>>>+<<<<->>>>|>>> => >>>|->>>>+|>>>
+            my $ncode = substr($s1,0,(length($s1)-$redundant_length));
+            $ncode .= $s4 . substr($s1,0,$redundant_length) . $s2;
+            $code .= $ncode;
+            my $pcodes = substr($s5,0,(length($s5)-$redundant_length));
+            $code_to_process = $pcodes . ${^POSTMATCH};
+            print STDERR "$s1|$s2|$s3|$s4|$s5 => $ncode##$pcodes\n";
+        }
+        else
+        {
+            $code .= $s1.$s2;
+            $code_to_process = $s3.$s4.$s5.${^POSTMATCH};
+        }
+    }
+    $code .= $code_to_process;
+    doneop('reduced pointer movement (>+<-> => ->+)');
+}
+
+my $optimized_size = length $code;
+print STDERR "WARNING: Optimized size $optimized_size is not equal to compact size $compact_size\n" if(  $optimized_size != $compact_size  && ( $optimizer_stat ) );
+
+mprint($code) if( $optimizer > $optimizer_operation && $print_brainfuck );
+exit( $compact_size - $optimized_size ) if( $optimizer_stat || $print_brainfuck );
+
+
+my @code = ();
+my %neg = ( '<' => '>', '-' =>'+', 'z' => 'Z' );
+## creating
+while( $code =~  m/([\QZ-+<>,[].\E])(\1*)/ip ) # compress code
+{
+    if( $1 eq '[' || $1 eq ']' )
+    {
+        for( 0 .. (length($2)) )
+        {
+            push(@code, $1, 0); # a loop can NEVER start/end at 0
+        }
+    }
+    else
+    {
+        if( defined $neg{$1} ){
+            push(@code, $neg{$1}, -1*(length($2)+1) );
+        } else {
+            push(@code, $1, (length($2)+1) );
+        }
+    }
+    $code=${^POSTMATCH};
+}
+
+sub code_match
+{
+    my ( $i, $inst ) = @_;
+    foreach my $j ( split//,$inst )
+    {
+        return 0 if( ! defined $code[$i] || $code[$i] ne $j );
+        $i+=2;
+    }
+    return 1;
+}
+
+sub code_replace
+{
+    my ($from, $pairlength, @instr ) = @_;
+    my $numelem = $pairlength*2;
+    my $cursor = $from;
+    my $last_element  = pop(@instr);
+    my $next_last_element = pop(@instr);
+
+    foreach my $inst ( @instr ) {
+        if( $numelem ) {
+            $code[$cursor++] = $inst;
+            $numelem--;
+        }
+    }
+    while( $numelem > 2 ) {
+        $code[$cursor++] = 0;
+        $numelem--;
+    }
+    $code[$cursor++] = $next_last_element;
+    $code[$cursor] = $last_element;
+}
+
+my $fruits = 1;
+while( $compiler_optimizer &&  $fruits ) {
+    # further optimizing
+    my $simple_bracket = 0;
+    my $movement_balance = 0;
+    my $zero_pointer_balance = 0;
+    my $unloop = 0;
+    my $side_effects = 1;
+    $fruits = 0;
+
+    for( my $i=0; $i<@code; $i+=2 )
+    {
+        #[-->++] =>
+        #[++>--]+ seek for 1
+        if( code_match($i, '[+>+]') && # + and - has the same comand
+            ($code[$i+3]+$code[$i+7]) == 0 )# thw two cancel each other out
+        {
+            my @rep = ();
+            my $to_replace = $i;
+            my $how_many_to_replace = 5;
+            if( defined $code[$i-2] && $code[$i-2] eq '+' ) {
+                $to_replace -= 2;
+                $how_many_to_replace++;
+                push(@rep, '+', $code[$i-1]-$code[$i+7]) if( $code[$i-1]-$code[$i+7] != 0 );
+            }
+            else
+            {
+                push(@rep, '+', $code[$i+3]);
+            }
+            push(@rep, '[', ( $bit_mask ? $code[$i+3]&$bit_mask : $code[$i+3] ) );
+            push(@rep, $code[$i+4], $code[$i+5]);
+            push(@rep, ']', 0);
+            if( defined $code[$i+10] && $code[$i+10] eq '+' ) {
+                $how_many_to_replace++;
+                push(@rep, '+', $code[$i+11]-$code[$i+3]) if( $code[$i+11]-$code[$i+3] != 0 );
+            }
+            else
+            {
+                push(@rep, '+', $code[$i+7]);
+            }
+            code_replace( $to_replace, $how_many_to_replace, @rep );
+            $fruits = 1;
+        }
+        # [->+++>+.>+>+] => $d[$p+1]+=$d[$p]*3....;$d[$p]=0;
+        elsif( $code[$i] eq '[' ) {
+            $simple_bracket = $i ;
+            $movement_balance = 0;
+            $zero_pointer_balance=0;
+            $side_effects=0;
+        }
+        elsif( $code[$i] eq '>' ) {
+            $movement_balance += $code[$i+1];
+        }
+        elsif( $code[$i] eq '+' ){
+            if( $unloop ) {
+                if(  $movement_balance  == 0  ) {
+                    $code[$i] = 0;
+                }else {
+                    $code[$i] = 'MUL';
+                    $code[$i+1] = [ $code[$i+1], 0, $movement_balance*-1];
+                }
+            } elsif( $movement_balance  == 0 ) {
+                $zero_pointer_balance+=$code[$i+1];
+            }
+        }
+        elsif( $code[$i] eq ']' ) {
+            if( $unloop == $i ) {
+                if( $code[$i-2] ne '0' ) {
+                    my $t=$i-4;
+                    while( $code[$t] ne '0' ) {
+                    die("no more mr nice guy\n") if( $t == 0 );
+                    $t-=2;
+                    }
+                    while( $t != $i-2 ){
+                    $code[$t] = $code[$t+2];
+                    $t++;
+                    }
+                }
+                $code[$i-2] = 'Z';
+                $unloop = 0;
+                $code[$i] = '}';
+                $fruits = 1;
+            }
+            elsif( $simple_bracket && $zero_pointer_balance == -1 && $movement_balance == 0 )
+            {
+                if( $side_effects ) { # loop balanced but with side effects
+                    $code[$simple_bracket] = 'WHILE{';
+                    $code[$i] = '}';
+                } else {
+                    $unloop=$i;
+                    $code[$simple_bracket] = 'IF{';
+                    $i=$simple_bracket;
+                    $zero_pointer_balance=0;
+                }
+            }
+            $simple_bracket = 0 ;
+            $movement_balance = 0;
+            $zero_pointer_balance=0;
+        }
+        elsif( $code[$i] =~ m/[\.,]/i )
+        {
+	        # do not optimize when size effects
+            $side_effects = 1 ;
+        }
+    }
+}
+
+#remove pointer moevement
+if ( $compiler_optimizer && ! $debugger && ! $force_perl) { # this becomes slower when running in perl mode
+    my $constant = 1;
+    my $last_pointer_command=0;
+    my $movement_balance = 0;
+    my @bracket_stack = ();
+    my $simple_bracket = 0;
+    for( my $i=0; $i<@code; $i+=2 ){
+        if( $code[$i] eq '>'&& ( $simple_bracket || @bracket_stack == 0 ) ) {
+                $movement_balance += $code[$i+1];
+                $last_pointer_command=$i;
+                $code[$i]=0;
+        }elsif( $code[$i] eq 'WHILE{' || $code[$i] eq 'IF{' ) {
+                push(@bracket_stack, $simple_bracket);
+                $simple_bracket=1;
+                $code[$i+1] = [ $code[$i+1], $movement_balance ];
+        }elsif( $code[$i] eq '[' ) {
+                push(@bracket_stack, $simple_bracket);
+                $simple_bracket=0;
+                $code[$i+1] = [ $code[$i+1], $movement_balance ];
+        }elsif( $code[$i] eq ']' ) {
+                $simple_bracket = pop(@bracket_stack);
+        }elsif( $code[$i] eq '}' ) {
+                $simple_bracket = pop(@bracket_stack);
+        }elsif( $code[$i] eq 'MUL') {
+                $code[$i+1][1] = $movement_balance ;
+        }else {
+                $code[$i+1] = [ $code[$i+1], $movement_balance ];
+        }
+    }
+}
+
+my $print_header;
+my $print_footer;
+
+sub create_c_code
+{
+    my $dtype = $bit_size == 8 ? 'char' : 'int';
+    $print_header = "#include <stdio.h>\n\n";
+    $print_footer="int main(void){\n  run_c();\n  return 0;\n}\n\n";
+    my $t = "  ";
+    my $sub = "$dtype buf[0xffff];\nvoid run_c() {\n  $dtype *p=buf;\n  int c;\n";
+
+    for(my $i=0; $i<@code; $i+=2 )
+    {
+        #print STDERR "Doing $i  : $code[$i]($code[$i+1])\n";
+        # + and -
+        my $param;
+        my $offset = 0;
+        my $param2 = 0;
+        if( ref $code[$i+1] ){
+            $param = $code[$i+1][0];
+            $offset = $code[$i+1][1];
+            $param2 = defined $code[$i+1][2] ? $code[$i+1][2] : 0;
+        }
+        else {
+            $param = $code[$i+1];
+        }
+
+        if( $code[$i] eq '+' )
+        {
+            $sub .= $t."p[$offset] +=$param;"."\n";
+        }
+        elsif ( $code[$i] eq '>' ) {
+                $sub .= $t."p += $param;"."\n";
+        }
+        elsif (  $code[$i] eq ',' ) {
+            my $inp = '';
+            for( 1..$param ) {
+                $inp .= 'c=getchar();';
+            }
+            $sub .= $t."${inp}if(c>=0)p[$offset]=c;"."\n";
+        }
+        elsif ( $code[$i] eq '.' ) {
+            my $inp = '';
+            for( 1..$param ) {
+                $inp .= "putchar(p[$offset]);";
+            }
+            $sub .= $t.$inp."\n";
+        }
+        elsif ( $code[$i] eq 'Z' ) {
+            $sub .= $t."p[$offset] = 0;"."\n";
+        }
+        elsif ( $code[$i] eq '[' ||  $code[$i] eq 'WHILE{' ) {
+            my $extra = ( $bit_mask && $bit_size != 8 ? "$bit_mask&" : '' );
+            if( $param ) {
+                $sub .= $t."while( $extra p[$offset] != $param ) {"."\n";
+            } else {
+                $sub .= $t."while( $extra p[$offset] ) {"."\n";
+            }
+            $t.="  ";
+        }
+        elsif ( $code[$i] =~ /[\]\}]/ ) {
+            $t = substr($t, 2);
+            $sub .= $t."}"."\n";
+        }
+        elsif( $code[$i] eq 'MUL' ) {
+            my $adjust = $param2+$offset;
+            $sub .= $t."p[$offset] += $param*p[$adjust];"."\n";
+        }
+        elsif( $code[$i] eq 'IF{' ) {
+            my $extra = ( $bit_mask && $bit_size != 8 ? "$bit_mask&" : '' );
+            if( $param ) {
+                $sub .= $t."if( $extra p[$offset] != $param ) {"."\n";
+            } else {
+                $sub .= $t."if( $extra p[$offset]  ) {"."\n";
+            }
+            $t.="  ";
+        }
+        elsif ( $code[$i] ne '0' ) {
+            die("Unknown command $code[$i]($param)");
+        }
+    }
+    $sub.= "}\n";
+    return $sub;
+}
+
+sub gen_perl
+{
+    my $sub = $_[0].$_[1]."\n";
+    $sub .= $_[0]."print \'$_[1]\' .\" (p is \$p, d[p] is \" . ( defined \$d[\$p] ? \$d[\$p] : \"undef\" ) . \"\\n\";\n" if( $debugger  );
+  return $sub;
+}
+
+
+# data and pointer location need to be global if one should have a sub to do debug/inspect
+my @d =();
+my $p=0;
+
+sub create_perl_code
+{
+    $print_header = "#!/usr/bin/perl\nmy \@d = ();\nmy \$p=0;\n\n";
+    $print_footer = "run_perl();\n";
+
+    my $t = "  ";
+    my $sub = "sub run_perl {\n";
+
+    for(my $i=0; $i<@code; $i+=2 )
+    {
+        #print STDERR "Doing $i  : $code[$i]($code[$i+1])\n";
+        # + and -
+        my $param;
+        my $offset = '';
+        my $param2 = 0;
+        if( ref $code[$i+1] ){
+            $param = $code[$i+1][0];
+            $offset = ( $code[$i+1][1] != 0 ? "+".$code[$i+1][1] : '');
+            $param2 = defined $code[$i+1][2] ? $code[$i+1][2] : undef;
+        }
+        else {
+            $param = $code[$i+1];
+        }
+
+
+        if( $code[$i] eq '+' )
+        {
+            if( $param > 1 || $param < -1 ) {
+                $sub .= gen_perl($t, "\$d[\$p$offset] +=$param;");
+            } else {
+                $sub .= gen_perl($t, "\$d[\$p$offset]" . ( $param > 0 ?  '++' : '--' ) . ";");
+            }
+        }
+        elsif ( $code[$i] eq '>' ) {
+            if( $param > 1 || $param < -1 ) {
+                $sub .= gen_perl($t, "\$p += $param;");
+            } else {
+                $sub .= gen_perl($t, '$p' . ( $param > 0 ?  '++' : '--' ) . ";");
+            }
+        }
+        elsif (  $code[$i] eq ',' ) {
+            if( $param > 1 ) {
+                $sub .= gen_perl($t, "{ my \$in; for( 1..$param ) {\$in = getc()} \$d[\$p$offset] = ord(\$in) if( defined \$in ); }");
+            } else {
+                $sub .= gen_perl($t, "{ my \$in; \$in = getc(); \$d[\$p$offset] = ord(\$in) if( defined \$in ); }");
+            }
+        }
+        elsif ( $code[$i] eq '.' ) {
+            if( $param > 1 ) {
+                $sub .= gen_perl($t, "if( defined \$d[\$p$offset] ) { print chr(\$d[\$p$offset]) x $param } else { print chr(0) x $param }");
+            } else {
+                $sub .= gen_perl($t, "if( defined \$d[\$p$offset] ) { print chr(\$d[\$p$offset]) } else { print chr(0) }");
+            }
+        }
+        elsif ( $code[$i] eq 'Z' ) {
+            $sub .= gen_perl($t, "\$d[\$p$offset] = 0;");
+        }
+        elsif ( $code[$i] eq '[' ||  $code[$i] eq 'WHILE{' ) {
+            my $extra = ( $bit_mask ? "$bit_mask&" : '' );
+            if( $param ) {
+                $sub .= gen_perl($t, "while( !defined \$d[\$p$offset] || ($extra\$d[\$p$offset]) != $param ) {");
+            } else {
+                $sub .= gen_perl($t, "while( defined \$d[\$p$offset] && ($extra\$d[\$p$offset]) ) {");
+            }
+            $t.="  ";
+        }
+        elsif ( $code[$i] =~ /[\]\}]/ ) {
+            $t = substr($t, 2);
+            $sub .= gen_perl($t, "}");
+        }
+        elsif( $code[$i] eq 'MUL' ) {
+            my $mod = $param2 >= 0 ? "+$param2" : $param2;
+            #my $adjust = $param[2] >= 0 ? "+$param[2]" : $param[2];
+            $sub .= gen_perl($t, "\$d[\$p$offset] += $param*\$d[\$p$mod$offset];");
+        }
+        elsif( $code[$i] eq 'IF{' ) {
+            my $extra = ( $bit_mask ? "$bit_mask&" : '' );
+            if( $param ) {
+                $sub .= gen_perl($t, "if( !defined \$d[\$p$offset] || ($extra\$d[\$p$offset]) != $param ) {");
+            } else {
+                $sub .= gen_perl($t, "if( defined \$d[\$p$offset] && ($extra\$d[\$p$offset]) ) {");
+            }
+            $t.="  ";
+        }
+        elsif ( $code[$i] ne '0' ) {
+            die("Unknown command $code[$i]($param)");
+        }
+    }
+    $sub.= "}\n";
+    return $sub;
+}
+
+
+my $sub = create_perl_code();
+my $build_dir = '';
+eval($sub);
+if( $@ ) { die $@ };
+if( ! $debugger && ! $force_perl) {
+    my $ccode = create_c_code();
+    print_code($ccode);
+    use Inline;
+    if( $ENV{HOME} ) {
+        $build_dir = "$ENV{HOME}/.jitbf/Inline";
+        unless( -d  $build_dir ) {
+            mkdir("$ENV{HOME}/.jitbf") && mkdir($build_dir) || die("Could not make C-code build directory $build_dir: $!\n");
+        }
+        print STDERR "Using directory '$build_dir'\n";
+    }
+
+    *OLD_STDOUT = *STDOUT;
+    *STDOUT = *STDERR;
+    Inline->bind(C => $ccode, PRINT_INFO => 1, BUILD_TIMERS => 1, CLEAN_AFTER_BUILD => 0, NAME => $filename, DIRECTORY => $build_dir, AUTONAME => 1);#, DIRECTORY=> $ENV{HOME}.'/.jitbf');
+    *STDOUT = *OLD_STDOUT;
+    &run_c;
+}
+else
+{
+  print_code($sub);
+  &run_perl;
+}
+if( $debugger || $optimizer_stat )
+{
+    print "\n";
+    my $cnt = 0;
+    my $olddata = '';
+
+    print STDERR "Data:\n";
+    for( my $i=0; $i<@d; $i++ )
+    {
+        my $d = defined $d[$i] ? $d[$i] . " (" . chr($d[$i]&255) . " )" : "undef";
+        if( $d eq $olddata ) {
+            $cnt++;
+        } else {
+            print STDERR "$cnt similar rows\n" if( $cnt > 1 );
+            print STDERR (($i-1)."* $olddata\n") if( $cnt == 1 );
+            print STDERR "$i  $d\n";
+            $cnt=0;
+            $olddata=$d;
+        }
+    }
+    print STDERR "Code:\n";
+    for( my $i=0; $i<@code; $i+=2 )
+    {
+        print STDERR "$i $code[$i]($code[$i+1])\n";
+    }
+}
+
+sub print_code
+{
+  if( $print_perl )
+  {
+      my $sub = $_[0];
+      if( $line_numbers ) {
+	  my $linenum = 1;
+	  foreach my $line ( split/\n/, $print_header.$sub.$print_footer ) {
+	      print $linenum++ . " $line \n";
+	  }
+      }
+      else {
+	  print $print_header.$sub.$print_footer;
+      }
+      exit(0);
+  }
+}
