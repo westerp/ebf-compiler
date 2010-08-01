@@ -1,6 +1,19 @@
 #!/usr/bin/perl -W
 # $Id$
 #
+# jitbf is a
+#   1. brainfuck optimizer (can print out optimized code)
+#   2. brainfuck to optimized perl or c source code generator
+#   3. a JIT. can run it's generated perl or C (with Inline) nativly
+#   4. the perl part was though of as could eb the start of a debugger, eg.
+#      the code will run a sub between each step and that will allow
+#      inspection, stepping, run to end loop, set input buffer etc.
+#
+# It is really slow at first run with awib (5 minutes). It's not the compiler but the parser.
+# Maybe with smaller code (use of macroes) will it be faster. when it has compiled first time
+# it's quite fast. It runs awib compilation of itself 3 times faster than awibs own compiled
+# binary.
+#
 # This file is part of ebf-compiler package
 #
 # ebf-compiler is free software: you can redistribute it and/or modify
@@ -21,7 +34,6 @@ use strict;
 use Getopt::Long;
 use Config;
 use Cwd 'abs_path';
-use Digest::MD5 qw(md5_hex);
 
 my $arch_bits = 32;
 my $arch_mask = 0xffffffff;
@@ -32,8 +44,8 @@ if( $Config{archname} =~ /^x86_64/ ) {
     $arch_mask |=0xfffffff;
 }
 my $bit_size  = 0;      # standard bit size is undefined
-my $num_cells = 0;      # set a memory limit. 0 == unlimited
-my $optimizer = 99;     # werther or not we want to print out optimized brainfuck code
+my $num_cells = 0xffff; # set a memory limit. 0 == unlimited
+my $optimizer = 99;     # werther or not we want brainfuck level optimizing
 my $optimizer_stat = 0; # optimizer statictics info
 my $debugger = 0;       # creates a function with a debugging feature
 my $help = 0;           # help
@@ -50,13 +62,37 @@ GetOptions( 'bits|b=i' => \$bit_size, 'memory|cells|c=i' => \$num_cells,
             'help|h' => \$help, 'fuzzy!' => \$compiler_optimizer,
             'l|line' => \$line_numbers  );
 
+$print_perl = 1 if( $line_numbers );
 
 my $filename = @ARGV ? abs_path($ARGV[0]) : '';
-#my ($dirpart, $filepart) =  $filename =~ /^(.*)\/([^\/]+)$/;
+my $cachename = $filename;
+$cachename =~ s/\//_/g;
 $filename =~  s/^(.*)\///;
-$filename =~  s/\W/_/;
+$filename =~  s/^(\w+).*$/$1/;
+my $build_dir = '';
+if( $ENV{HOME} ) {
+    $build_dir = "$ENV{HOME}/.jitbf/Inline";
+    unless( -d  $build_dir ) {
+        mkdir("$ENV{HOME}/.jitbf") && mkdir($build_dir) || die("Could not make C-code build directory $build_dir: $!\n");
+    }
+}
 
-$print_perl = 1 if( $line_numbers );
+# todo cache file generator and chekcing based on time
+# if(
+# my $bit_size  = 0;      # standard bit size is undefined
+# my $num_cells = 0;      # set a memory limit. 0 == unlimited
+# my $optimizer = 99;     # werther or not we want to print out optimized brainfuck code
+# my $optimizer_stat = 0; # optimizer statictics info
+# my $debugger = 0;       # creates a function with a debugging feature
+# my $help = 0;           # help
+# my $print_brainfuck = 0;# print optimized brainfuck code_match
+# my $compiler_optimizer = 1; # optimizes code sections
+# my $print_perl = 0;     # prints generated perl code and exit
+# my $line_numbers = 0;   # when printing  code.
+# my $force_perl = 0;
+
+
+
 
 my $ver = '$Id$';
 my ($progname) = $0 =~ m/.*\/(.*)/;
@@ -433,7 +469,7 @@ sub create_c_code
     $print_header = "#include <stdio.h>\n\n";
     $print_footer="int main(void){\n  run_c();\n  return 0;\n}\n\n";
     my $t = "  ";
-    my $sub = "$dtype buf[0xffff];\nvoid run_c() {\n  $dtype *p=buf;\n  int c;\n";
+    my $sub = "$dtype buf[$num_cells];\nvoid run_c() {\n  $dtype *p=buf;\n  int c;\n";
 
     for(my $i=0; $i<@code; $i+=2 )
     {
@@ -615,25 +651,17 @@ sub create_perl_code
 
 
 my $sub = create_perl_code();
-my $build_dir = '';
 eval($sub);
 if( $@ ) { die $@ };
 if( ! $debugger && ! $force_perl) {
     my $ccode = create_c_code();
     print_code($ccode);
     use Inline;
-    if( $ENV{HOME} ) {
-        $build_dir = "$ENV{HOME}/.jitbf/Inline";
-        unless( -d  $build_dir ) {
-            mkdir("$ENV{HOME}/.jitbf") && mkdir($build_dir) || die("Could not make C-code build directory $build_dir: $!\n");
-        }
-        print STDERR "Using directory '$build_dir'\n";
-    }
 
-    *OLD_STDOUT = *STDOUT;
-    *STDOUT = *STDERR;
-    Inline->bind(C => $ccode, PRINT_INFO => 1, BUILD_TIMERS => 1, CLEAN_AFTER_BUILD => 0, NAME => $filename, DIRECTORY => $build_dir, AUTONAME => 1);#, DIRECTORY=> $ENV{HOME}.'/.jitbf');
-    *STDOUT = *OLD_STDOUT;
+    #*OLD_STDOUT = *STDOUT;
+    #*STDOUT = *STDERR;
+    Inline->bind(C => $ccode, USING => 'ParseRegExp', PRINT_INFO => 0, BUILD_TIMERS => 0, CLEAN_AFTER_BUILD => 0, NAME => $filename, DIRECTORY => $build_dir, AUTONAME => 1);#, DIRECTORY=> $ENV{HOME}.'/.jitbf');
+    #*STDOUT = *OLD_STDOUT;
     &run_c;
 }
 else
