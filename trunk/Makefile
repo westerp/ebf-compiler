@@ -16,10 +16,12 @@
 # You should have received a copy of the GNU General Public License
 
 SVNREPO = https://ebf-compiler.googlecode.com/svn
-INTERPRENTER = bf
+INTERPRETER = "tools/jitbf"
+JITBF = "tools/jitbf"
+CC = gcc -O2
 DESIGN = lamp-genie.txt
 
-test: 	$(INTERPRENTER).test.tmp
+test: 	$(INTERPRETER).test.tmp
 	@echo "To make (perhaps new) binary, run make binary or better, make test-bin,  to create binary"
 
 all: 	test test-bin
@@ -27,30 +29,34 @@ all: 	test test-bin
 testall: test test-bin test-interprenters
 
 test-interprenters:
-	make test INTERPRENTER=bf
-	make test INTERPRENTER=beef
-	make test INTERPRENTER=bf1.pl
+	make test INTERPRETER=bf
+	make test INTERPRETER=beef
+	make test INTERPRETER=bf1.pl
 
-$(INTERPRENTER).test.tmp: ebft.bf tools/test.sh
-	tools/test.sh $(INTERPRENTER) ebft.bf
-	@touch $(INTERPRENTER).test.tmp
+$(INTERPRETER).test.tmp: ebft.bf tools/test.sh
+	tools/test.sh $(INTERPRETER) ebft.bf
+	@touch $(INTERPRETER).test.tmp
 
-test-bin: $(INTERPRENTER).test-bin.tmp
+test-bin: $(INTERPRETER).test-bin.tmp
 
-$(INTERPRENTER).test-bin.tmp: ebf-bin.bf tools/test.sh
-	tools/test.sh $(INTERPRENTER) ebf-bin.bf
-	@touch $(INTERPRENTER).test-bin.tmp
+$(INTERPRETER).test-bin.tmp: ebf-bin.bf tools/test.sh
+	tools/test.sh $(INTERPRETER) ebf-bin.bf
+	@touch $(INTERPRETER).test-bin.tmp
 
 compile: ebft.bf
 
-ebft.bf: ebf.bf ebf.ebf
-	$(INTERPRENTER) ebf.bf < ebf.ebf > ebft.tmp
+ebft.bf: ebf ebf.ebf
+	./ebf < ebf.ebf > ebft.tmp
 	@perl -e 'while(<>){die("compilation failed: $$_") if( $$_=~ /ERROR/)}' ebft.tmp
 	@mv ebft.tmp ebft.bf
 	@diff -wu ebf.bf ebft.bf || true
 
+ebf    : ebf.bf
+	$(JITBF) -p ebf.bf > ebf.c
+	$(CC) ebf.c -o ebf
+
 ebf.bf: ebf-bin-bootstrap.bf
-	$(INTERPRENTER) ebf-bin-bootstrap.bf < ebf.ebf > ebf.tmp
+	$(INTERPRETER) ebf-bin-bootstrap.bf < ebf.ebf > ebf.tmp
 	@perl -e 'while(<>){die("compilation failed: $$_") if( $$_=~ /ERROR/)}' ebf.tmp
 	@mv ebf.tmp ebf.bf
 
@@ -100,8 +106,8 @@ ebf-bin-bootstrap.bf:
 		echo "beef ebf-handcompiled.bf < ebf-1.1.0.ebf > ebf-bin-1.1.0.bf" && \
 		beef ebf-handcompiled.bf < ebf-1.1.0.ebf > ebf-bin-1.1.0.bf && \
 		perl -e 'while(<>){die("compilation failed: $$_") if( $$_=~ /ERROR/)}'  ebf-bin-1.1.0.bf && \
-		echo $(INTERPRENTER) "ebf-bin-1.1.0.bf < ebf-1.2.0.ebf > ebf-1.2.0.bf" && \
-		$(INTERPRENTER) ebf-bin-1.1.0.bf < ebf-1.2.0.ebf > ebf-bin-1.2.0.bf && \
+		echo $(INTERPRETER) "ebf-bin-1.1.0.bf < ebf-1.2.0.ebf > ebf-1.2.0.bf" && \
+		$(INTERPRETER) ebf-bin-1.1.0.bf < ebf-1.2.0.ebf > ebf-bin-1.2.0.bf && \
 		perl -e 'while(<>){die("compilation failed: $$_") if( $$_=~ /ERROR/)}' ebf-bin-1.2.0.bf && \
 		cp  ebf-bin-1.2.0.bf ebf-bin-bootstrap.bf || false; \
 	fi
