@@ -1,4 +1,4 @@
-#!/usr/bin/perl -W
+#!/usr/bin/perl
 # $Id$
 #
 # jitbf is a
@@ -31,6 +31,8 @@
 
 
 use strict;
+use warnings;
+
 use Getopt::Long;
 use Config;
 use Cwd 'abs_path';
@@ -51,48 +53,56 @@ my $debugger = 0;       # creates a function with a debugging feature
 my $help = 0;           # help
 my $print_brainfuck = 0;# print optimized brainfuck code_match
 my $compiler_optimizer = 1; # optimizes code sections
-my $print_perl = 0;     # prints generated perl code and exit
+my $print = 0;     # prints generated perl code and exit
 my $line_numbers = 0;   # when printing  code.
 my $force_perl = 0;
-GetOptions( 'bits|b=i' => \$bit_size, 'memory|cells|c=i' => \$num_cells,
-            'bf|print-brainfuck' => \$print_brainfuck, 'print|p' => \$print_perl,
-            'optimize-level|optimize|o=i{0,1}' => \$optimizer,
-	    'perl' => \$force_perl,
-            'stats|s' => \$optimizer_stat, 'debug|d!' => \$debugger,
-            'help|h' => \$help, 'fuzzy!' => \$compiler_optimizer,
-            'l|line' => \$line_numbers  );
-
-$print_perl = 1 if( $line_numbers );
-
-my $filename = @ARGV ? abs_path($ARGV[0]) : '';
-my $cachename = $filename;
-$cachename =~ s/\//_/g;
-$filename =~  s/^(.*)\///;
-$filename =~  s/^(\w+).*$/$1/;
+my $new_cache = 0;
 my $build_dir = '';
+my $cache_file = '';
 if( $ENV{HOME} ) {
-    $build_dir = "$ENV{HOME}/.jitbf/Inline";
+    $build_dir = "$ENV{HOME}/.jitbf/Inline/";
     unless( -d  $build_dir ) {
         mkdir("$ENV{HOME}/.jitbf") && mkdir($build_dir) || die("Could not make C-code build directory $build_dir: $!\n");
     }
 }
 
-# todo cache file generator and chekcing based on time
-# if(
-# my $bit_size  = 0;      # standard bit size is undefined
-# my $num_cells = 0;      # set a memory limit. 0 == unlimited
-# my $optimizer = 99;     # werther or not we want to print out optimized brainfuck code
-# my $optimizer_stat = 0; # optimizer statictics info
-# my $debugger = 0;       # creates a function with a debugging feature
-# my $help = 0;           # help
-# my $print_brainfuck = 0;# print optimized brainfuck code_match
-# my $compiler_optimizer = 1; # optimizes code sections
-# my $print_perl = 0;     # prints generated perl code and exit
-# my $line_numbers = 0;   # when printing  code.
-# my $force_perl = 0;
+# fast optimizations of already created default builds
+if( -d $build_dir && @ARGV == 1 && -r "$ARGV[0]" ) {
+    $cache_file = abs_path($ARGV[0]);
+    my $filename = $cache_file;
+    $cache_file =~ s/\//_/g;
+    if( -r $build_dir.$cache_file && (stat($build_dir.$cache_file))[9] > (stat($ARGV[0]))[9] ) {
+        my $ccode;
+        # read the code from filename
+        if( open( CACHE, $build_dir.$cache_file ) ) {
+            my $spare = $/;
+            undef $/;
+            $ccode = <CACHE>;
+            close CACHE;
+            $/ = $spare;
+        }
+        $filename =~  s/^(.*)\///;
+        $filename =~  s/^(\w+).*$/$1/;
 
+        {
+            no warnings 'redefine';
+            use Inline;
+            Inline->bind(C => $ccode, USING => 'ParseRegExp', PRINT_INFO => 0, BUILD_TIMERS => 0, CLEAN_AFTER_BUILD => 0, NAME => $filename, DIRECTORY => $build_dir, AUTONAME => 1);#, DIRECTORY=> $ENV{HOME}.'/.jitbf');
+        }
+        &run_c;
+        exit(0);
+    }
+}
 
+GetOptions( 'bits|b=i' => \$bit_size, 'memory|cells|c=i' => \$num_cells,
+            'bf|print-brainfuck' => \$print_brainfuck, 'print|p' => \$print,
+            'optimize-level|optimize|o=i{0,1}' => \$optimizer,
+	    'perl' => \$force_perl,
+            'stats|s' => \$optimizer_stat, 'debug|d!' => \$debugger,
+            'help|h' => \$help, 'fuzzy!' => \$compiler_optimizer,
+            'l|line' => \$line_numbers, 'n|new' => \$new_cache  );
 
+$print = 1 if( $line_numbers );
 
 my $ver = '$Id$';
 my ($progname) = $0 =~ m/.*\/(.*)/;
@@ -127,11 +137,17 @@ $ver
 
 --perl             force perl (no C). only usefull when debug is offset
 
+-n, --new          remove cache (regenerate)
+
 --help             this page
 eof
     exit(0);
 }
 
+my $filename = @ARGV ? abs_path($ARGV[0]) : '';
+die("$ARGV[0]: Does not exist or is a directory. please check\n") if( $filename && ( -d $filename || ! -r $filename ) );
+$filename =~  s/^(.*)\///;
+$filename =~  s/^(\w+).*$/$1/;
 
 my $bit_mask = ( $bit_size ? (-1&$arch_mask)>>($arch_bits-$bit_size) : 0);
 
@@ -186,7 +202,7 @@ $code =~ s/\Q[+]\E/Z/g;
 my $compact_size = length $code;
 doneop('replaced clear (ideally the smallest number)');
 
-if( $optimizer > $optimizer_operation ) {
+if( $optimizer >= $optimizer_operation ) {
     # remove beginning []s and [] right after other []/[-]
     my $prev;
     do {
@@ -200,7 +216,7 @@ if( $optimizer > $optimizer_operation ) {
     doneop('removed redundant []s');
 }
 
-if( $optimizer > $optimizer_operation ) {
+if( $optimizer >= $optimizer_operation ) {
     # remove <> >< +- and -+
     my $oldcode;
     do {
@@ -210,19 +226,19 @@ if( $optimizer > $optimizer_operation ) {
     doneop('removed <> >< +- -+');
 }
 
-if( $optimizer > $optimizer_operation ) {
+if( $optimizer >= $optimizer_operation ) {
     #remove +/- in front of Zero
     $code =~ s/[\Q+-\E]+(?=z)//gi;
     doneop('removed +/- in front of [-]/[+]');
 }
 
-if( $optimizer > $optimizer_operation ) {
+if( $optimizer >= $optimizer_operation ) {
     # remove ><+- after output
     $code =~ s/[\Qz<>+-\E]+$//ig;
     doneop('removed [-]<>+- in the end of a program');
 }
 
-if( $optimizer > $optimizer_operation ) {
+if( $optimizer >= $optimizer_operation ) {
 
     # heavy one replaces
     # >+<-> => ->+
@@ -655,13 +671,18 @@ eval($sub);
 if( $@ ) { die $@ };
 if( ! $debugger && ! $force_perl) {
     my $ccode = create_c_code();
+    if( $cache_file ) {
+        if( open( CACHE, ">$build_dir$cache_file" ) ) {
+            print CACHE $ccode;
+            close CACHE;
+        }
+    }
     print_code($ccode);
-    use Inline;
-
-    #*OLD_STDOUT = *STDOUT;
-    #*STDOUT = *STDERR;
-    Inline->bind(C => $ccode, USING => 'ParseRegExp', PRINT_INFO => 0, BUILD_TIMERS => 0, CLEAN_AFTER_BUILD => 0, NAME => $filename, DIRECTORY => $build_dir, AUTONAME => 1);#, DIRECTORY=> $ENV{HOME}.'/.jitbf');
-    #*STDOUT = *OLD_STDOUT;
+    {
+        no warnings 'redefine';
+        use Inline;
+        Inline->bind(C => $ccode, USING => 'ParseRegExp', PRINT_INFO => 0, BUILD_TIMERS => 0, CLEAN_AFTER_BUILD => 0, NAME => $filename, DIRECTORY => $build_dir, AUTONAME => 1);#, DIRECTORY=> $ENV{HOME}.'/.jitbf');
+    }
     &run_c;
 }
 else
@@ -698,7 +719,7 @@ if( $debugger || $optimizer_stat )
 
 sub print_code
 {
-  if( $print_perl )
+  if( $print )
   {
       my $sub = $_[0];
       if( $line_numbers ) {
