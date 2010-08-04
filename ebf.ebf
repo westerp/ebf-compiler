@@ -88,7 +88,7 @@ PTR=1277|3
 }
 
 {a; set position
-    $i. &i      readprint i and v
+    $i. &i $v.  readprint i and v
     $o(-)+      set overflow
     $e+$p(-)-   set error and p to 255
     &O &C       open and go to array value
@@ -110,7 +110,7 @@ PTR=1277|3
 
 {s; set variable
     define new variable start
-    $i. &i               readprint i and v
+    $i. &i $v.           readprint i and v
     &O                   open path to array index like input
 
     error checking code for double assignment
@@ -173,7 +173,7 @@ PTR=1277|3
 
 {r;          replace do macro
             $i.(-)$e+                               ; print out i. set error flag
-            read print to v &i                      ; read finished
+            read print to v &i $v.                  ; read finished
 
             &O                      ; open path to array index like input
             &C                                  ; move to array value
@@ -210,7 +210,7 @@ PTR=1277|3
             $o((-)
             $i.(-)                                  ; print and zero input,
 
-            read print to v &i                          ; read finished
+            read print to v &i $v.                      ; read finished
             $t+
 
             &O                      ; open path to array index like input
@@ -235,7 +235,7 @@ PTR=1277|3
 }
 
 {d;     delete  variable
-        $i.(-) &i $e+         readprint i and v and set error
+        $i.(-) &i $v.$e+         readprint i and v and set error
         &O &C                 open path and goto array location
         $v(-                  copy v to
             &Z $t + $e(-)     t and reset e
@@ -258,7 +258,6 @@ PTR=1277|3
         +[-<+]@t                            move to t and reset input is in i
         $F-]                                reset F
         $Z[@F- $v, $Z]                      buffer empty need to read from input
-        $v.                                 print v
 }
 
 {O      $v(-$c(@z)+@z(@c))                          open array path
@@ -319,7 +318,7 @@ input area with bytes written from ne or more macros
 >>>>>>>[->>>>>>>>]                                  ; goto 768
 @z ; indicates that we are on m
 $o+$M--
-$i ,(                                               ; outer loop. EOF=0
+$v ,(                                               ; outer loop. EOF=0
 
 ; copy $i to $w
 (- $t+ $w+)                                         ; pour $i to $w and $t
@@ -351,28 +350,17 @@ $a +++(- $w -----------)                            ; reduce $w with 3*11=33(!)
    $t (- delete &d           )                      ; !
 
 check for error
+$i(-)                                               ; reset i
 $t+                                                 ; set flag
 $e(
-    $e(-)$t-$i(-)$c+$v->(-)>(-)                     ; remove flag. simulate stack at v.
+    $e(-)$t-$c<+>->(-)>(-)                     ; remove flag. simulate stack at v.
 )
 $t(-                                                ; if flag set (no error)
 read another byte and exit if EOF
-$i(-)
-
-$F+                                                 ; set flag
-$B[-                                                 ; if bytes set in buffer
- $t->+[->+]-->                                      ; set 255 to t then move to first 255 on the right set to 254 move right
- [[>]- <                                            ; move right until 0 (to the right of data) set to 255
- [- <+[-<+]-@t$i+$w+[->+]-<]                        ; copy from oldest data position to i
- >[+]]                                              ; move to 255 and reset
- ++[--<++]-<                                        ; move to 254 marker set to 255
- +[-<+]@t                                           ; move to t and reset input is in i
-$F-]                                                ; reset o
-$Z[@F- $i, $Z]                                      ; move to e if set it is o and we need to read i from stdin since buffer was empty
-$t+                                                 ; need to set t
-$i+                                                 ; inc $i
-[-$t-]                                              ; in $i or $t (compiler thinks $t)
-$w[- t >]@w ))                                      ; loop until read EOF == 0/ -1/ no change
+&i
+$m+$v+   check for ~1
+[-$m-]   at eof if in this
+$z[@m->] ))                                      ; loop until read EOF == 0/ -1/ no change
 
 &e
 
