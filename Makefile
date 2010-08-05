@@ -16,8 +16,9 @@
 # You should have received a copy of the GNU General Public License
 
 SVNREPO = https://ebf-compiler.googlecode.com/svn
-INTERPRETER = "tools/jitbf"
-JITBF = "tools/jitbf"
+INTERPRETER = tools/jitbf
+INTREPRETER_FLAGS = -b 8
+JITBF = tools/jitbf
 CC = gcc -O2
 DESIGN = lamp-genie.txt
 
@@ -28,25 +29,25 @@ all: 	test test-bin
 
 testall: test test-bin test-interprenters
 
-test-interprenters:
-	make test INTERPRETER=bf
-	make test INTERPRETER=beef
-	make test INTERPRETER=bf1.pl
+test-interpreters:
+	make test INTERPRETER=bf INTREPRETER_FLAGS=
+	make test INTERPRETER=beef INTREPRETER_FLAGS=
+	make test INTERPRETER=bf1.pl INTREPRETER_FLAGS=
 
 $(INTERPRETER).test.tmp: ebft.bf tools/test.sh
-	tools/test.sh $(INTERPRETER) ebft.bf
+	tools/test.sh "$(INTERPRETER) ${INTREPRETER_FLAGS}" ebft.bf
 	@touch $(INTERPRETER).test.tmp
 
 test-bin: $(INTERPRETER).test-bin.tmp
 
 $(INTERPRETER).test-bin.tmp: ebf-bin.bf tools/test.sh
-	tools/test.sh $(INTERPRETER) ebf-bin.bf
+	tools/test.sh "$(INTERPRETER) ${INTREPRETER_FLAGS}" ebf-bin.bf
 	@touch $(INTERPRETER).test-bin.tmp
 
 compile: ebft.bf
 
 ebft.bf: ebf ebf.ebf
-	./ebf < ebf.ebf > ebft.tmp
+	./ebf < ebf.ebf | tee  ebft.tmp
 	@perl -e 'while(<>){die("compilation failed: $$_") if( $$_=~ /ERROR/)}' ebft.tmp
 	@mv ebft.tmp ebft.bf
 	@diff -wu ebf.bf ebft.bf || true
