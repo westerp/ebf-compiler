@@ -37,6 +37,11 @@ use Getopt::Long;
 use Config;
 use Cwd 'abs_path';
 
+my ($progname) = $0 =~ m/.*\/(.*)/;
+my ($predefined_bits) = $progname =~ m/(\d{1,2})/;
+my ($perl) = $progname =~ m/(perl)/;
+
+
 my $arch_bits = 32;
 my $arch_mask = 0xffffffff;
 # what use do we have for 64 bit brainfuck?
@@ -45,7 +50,7 @@ if( $Config{archname} =~ /^x86_64/ ) {
     $arch_mask <<=32;
     $arch_mask |=0xfffffff;
 }
-my $bit_size  = 0;      # standard bit size is undefined
+my $bit_size  = defined $predefined_bits ? $predefined_bits : $arch_bits;      # standard bit size is undefined
 my $num_cells = 0xffff; # set a memory limit. 0 == unlimited
 my $optimizer = 99;     # werther or not we want brainfuck level optimizing
 my $optimizer_stat = 0; # optimizer statictics info
@@ -55,10 +60,12 @@ my $print_brainfuck = 0;# print optimized brainfuck code_match
 my $compiler_optimizer = 1; # optimizes code sections
 my $print = 0;     # prints generated perl code and exit
 my $line_numbers = 0;   # when printing  code.
-my $force_perl = 0;
+my $force_perl = ( defined $perl ? 1 : 0 );
 my $new_cache = 0;
 my $build_dir = '';
 my $cache_file = '';
+my $eof = undef;
+
 if( $ENV{HOME} ) {
     $build_dir = "$ENV{HOME}/.jitbf/Inline/";
     unless( -d  $build_dir ) {
@@ -67,7 +74,7 @@ if( $ENV{HOME} ) {
 }
 
 # fast optimizations of already created default builds
-if( -d $build_dir && @ARGV == 1 && -r "$ARGV[0]" ) {
+if( -d $build_dir && @ARGV == 1 && -r "$ARGV[0]" && ! defined $perl && ! defined $predefined_bits ) {
     $cache_file = abs_path($ARGV[0]);
     my $filename = $cache_file;
     $cache_file =~ s/\//_/g;
@@ -100,15 +107,17 @@ GetOptions( 'bits|b=i' => \$bit_size, 'memory|cells|c=i' => \$num_cells,
 	    'perl' => \$force_perl,
             'stats|s' => \$optimizer_stat, 'debug|d!' => \$debugger,
             'help|h' => \$help, 'fuzzy!' => \$compiler_optimizer,
-            'l|line' => \$line_numbers, 'n|new' => \$new_cache  );
+            'l|line' => \$line_numbers, 'n|new' => \$new_cache, 'e|eof=s' => \$eof  );
 
 $print = 1 if( $line_numbers );
 
+die( "eof need to be a number") if ( defined $eof && $eof !~ m/^\-{0,1}\d+$/ );
+
 my $ver = '$Id$';
-my ($progname) = $0 =~ m/.*\/(.*)/;
+
 
 if( $help ) {
-    print <<eof;
+    print <<EOF;
 Usage: $progname brainfuck-file.b
 
 $progname is a Just in time BrainFuck to perl compiler
@@ -119,6 +128,9 @@ $ver
 
 -c, --memory,      how many cells should be available for the
 --cells            perl process to run on. default unlimited
+
+-e, --eof          indicate if you'd like a special eof value.
+                   common are 0 or -1. default is to no change cell.
 
 -o, --optimize,    set optimization level on brainfuck code
 --optimize-level   3 is obligatory when compiling to perl
@@ -140,7 +152,7 @@ $ver
 -n, --new          remove cache (regenerate)
 
 --help             this page
-eof
+EOF
     exit(0);
 }
 
@@ -150,6 +162,7 @@ $filename =~  s/^(.*)\///;
 $filename =~  s/^(\w+).*$/$1/;
 
 my $bit_mask = ( $bit_size ? (-1&$arch_mask)>>($arch_bits-$bit_size) : 0);
+$eof &= $bit_mask if( defined $eof );
 
 # read in whole file
 my $code = '';
@@ -481,11 +494,13 @@ my $print_footer;
 
 sub create_c_code
 {
-    my $dtype = $bit_size == 8 ? 'char' : 'int';
+    my $bs = $bit_size == 0 ? $arch_bits : $bit_size;
+    my $dtype = ( $bs <= 8 ? 'uint8_t' : ( $bs <= 16  ? 'uint16_t' : ($bs <= 32 ? 'uint32_t' : 'uint64_t' )));
+    my $bs_standard = ( $bs == 8 || $bs == 16 || $bs == 32 || $bs == 64  ? 1 : 0 );
     $print_header = "#include <stdio.h>\n\n";
     $print_footer="int main(void){\n  run_c();\n  return 0;\n}\n\n";
     my $t = "  ";
-    my $sub = "$dtype buf[$num_cells];\nvoid run_c() {\n  $dtype *p=buf;\n  int c;\n";
+    my $sub = "#include <stdint.h>\n\n$dtype buf[$num_cells];\nvoid run_c() {\n  $dtype *p=buf;\n  int c;\n";
 
     for(my $i=0; $i<@code; $i+=2 )
     {
@@ -511,11 +526,12 @@ sub create_c_code
                 $sub .= $t."p += $param;"."\n";
         }
         elsif (  $code[$i] eq ',' ) {
+            my $eof_code = (  defined $eof  ?  "else p[$offset]=$eof;" : '' );
             my $inp = '';
             for( 1..$param ) {
                 $inp .= 'c=getchar();';
             }
-            $sub .= $t."${inp}if(c>=0)p[$offset]=c;"."\n";
+            $sub .= $t."${inp}if(c>=0)p[$offset]=c;$eof_code"."\n";
         }
         elsif ( $code[$i] eq '.' ) {
             my $inp = '';
@@ -528,9 +544,10 @@ sub create_c_code
             $sub .= $t."p[$offset] = 0;"."\n";
         }
         elsif ( $code[$i] eq '[' ||  $code[$i] eq 'WHILE{' ) {
-            my $extra = ( $bit_mask && $bit_size != 8 ? "$bit_mask&" : '' );
+            my $extra = ( $bit_mask && !$bs_standard ? "$bit_mask&" : '' );
             if( $param ) {
-                $sub .= $t."while( $extra p[$offset] != $param ) {"."\n";
+                $param &= $bit_mask;
+                $sub .= $t."while( $extra p[$offset] != ${param}u ) {"."\n";
             } else {
                 $sub .= $t."while( $extra p[$offset] ) {"."\n";
             }
@@ -545,9 +562,10 @@ sub create_c_code
             $sub .= $t."p[$offset] += $param*p[$adjust];"."\n";
         }
         elsif( $code[$i] eq 'IF{' ) {
-            my $extra = ( $bit_mask && $bit_size != 8 ? "$bit_mask&" : '' );
+            my $extra = ( $bit_mask && !$bs_standard? "$bit_mask&" : '' );
             if( $param ) {
-                $sub .= $t."if( $extra p[$offset] != $param ) {"."\n";
+                $param &= $bit_mask;
+                $sub .= $t."if( $extra p[$offset] != ${param}u ) {"."\n";
             } else {
                 $sub .= $t."if( $extra p[$offset]  ) {"."\n";
             }
@@ -596,8 +614,6 @@ sub create_perl_code
         else {
             $param = $code[$i+1];
         }
-
-
         if( $code[$i] eq '+' )
         {
             if( $param > 1 || $param < -1 ) {
@@ -614,17 +630,18 @@ sub create_perl_code
             }
         }
         elsif (  $code[$i] eq ',' ) {
+            my $eof_code = (  defined $eof  ?  "else { \$d[\$p$offset] = $eof }" : '' );
             if( $param > 1 ) {
-                $sub .= gen_perl($t, "{ my \$in; for( 1..$param ) {\$in = getc()} \$d[\$p$offset] = ord(\$in) if( defined \$in ); }");
+                $sub .= gen_perl($t, "{ my \$in; for( 1..$param ) {\$in = getc()} if( defined \$in ) { \$d[\$p$offset] = ord(\$in) } $eof_code  }");
             } else {
-                $sub .= gen_perl($t, "{ my \$in; \$in = getc(); \$d[\$p$offset] = ord(\$in) if( defined \$in ); }");
+                $sub .= gen_perl($t, "{ my \$in; \$in = getc(); if( defined \$in ) { \$d[\$p$offset] = ord(\$in) } $eof_code  }");
             }
         }
         elsif ( $code[$i] eq '.' ) {
             if( $param > 1 ) {
                 $sub .= gen_perl($t, "if( defined \$d[\$p$offset] ) { print chr(\$d[\$p$offset]) x $param } else { print chr(0) x $param }");
             } else {
-                $sub .= gen_perl($t, "if( defined \$d[\$p$offset] ) { print chr(\$d[\$p$offset]) } else { print chr(0) }");
+                $sub .= gen_perl($t, "if( defined \$d[\$p$offset] ) { print chr(\$d[\$p$offset]) } else { print chr(0) } ");
             }
         }
         elsif ( $code[$i] eq 'Z' ) {
