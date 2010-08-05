@@ -183,6 +183,7 @@ PTR=1277|3
             &B(-$z@c$m+$c@z)&F              ; restore original value
             &R                                 ; close array
 
+            $B(-)+                  report bytes
             $Z($e(-)$Z-(- $I>
                 [[>]>>]<<+++[--<++]--@M
               )
@@ -195,9 +196,6 @@ PTR=1277|3
             ]
             +[-<+]-
             <[
-                report one byte to B
-                ++[--<++]--@M$B+$I+[->+]-<
-
                 [->>++[->+]-<++[-<+]-<]             ; copy byte to next byte and end of buffer
                 >>+[->+]>-<+[-<+]<-<]               ; move 255 to new open space and repeat |0*|0|255|macrocontents|0|nextmacro
             >+>>[ [-<<+>>]>]                        ; copy back to |0*|macrocontents|0|0|0|nextmacro
@@ -248,16 +246,17 @@ PTR=1277|3
 
 {i
         read input to v and output
-        $F+                                 set flag
-        $B[-                                if bytes set in buffer
+        $B(-                                if we think it's bytes in buffer
         $t->+[->+]-->                       set 255 to t then move to first 255 on the right set to 254 move right
         [[>]- <                             move right until 0 to the right of data set to 255
         [- <+[-<+]-@t$v+$w+[->+]-<]         copy from oldest data position to v
         >[+]]                               move to 255 and reset
         ++[--<++]-<                         move to 254 marker set to 255
         +[-<+]@t                            move to t and reset input is in i
-        $F-]                                reset F
-        $Z[@F- $v, $Z]                      buffer empty need to read from input
+        )                                   reset F
+        $m+$v[$m-$B+$m]$z                   set B again if its ok
+        [@m- $v, $z]                        buffer empty need to read from input
+
 }
 
 {O      $v(-$c(@z)+@z(@c))                          open array path
@@ -363,5 +362,3 @@ $m+$v+   check for ~1
 $z[@m->] ))                                      ; loop until read EOF == 0/ -1/ no change
 
 &e
-
-
