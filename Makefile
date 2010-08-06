@@ -17,10 +17,12 @@
 
 SVNREPO = https://ebf-compiler.googlecode.com/svn
 INTERPRETER = tools/jitbf
-INTREPRETER_FLAGS = -b 8
+INTREPRETER_FLAGS =
+BOOTSTRAP_FLAGS = --eof 0
 JITBF = tools/jitbf
 CC = gcc -O2
-DESIGN = lamp-genie.txt
+DESIGN = genie23rds.txt
+LOADING = loading.txt
 
 test: 	$(INTERPRETER).test.tmp
 	@echo "To make (perhaps new) binary, run make binary or better, make test-bin,  to create binary"
@@ -42,12 +44,16 @@ test-bin: $(INTERPRETER).test-bin.tmp
 
 $(INTERPRETER).test-bin.tmp: ebf-bin.bf tools/test.sh
 	tools/test.sh "$(INTERPRETER) ${INTREPRETER_FLAGS}" ebf-bin.bf
+	tools/test.sh "$(INTERPRETER)" ebf-bin.bf
+	tools/test.sh "$(JITBF) --perl" ebf-bin.bf
+	tools/test.sh bf ebf-bin.bf
+	tools/test.sh beef ebf-bin.bf
 	@touch $(INTERPRETER).test-bin.tmp
 
 compile: ebft.bf
 
-ebft.bf: ebf ebf.ebf
-	./ebf < ebf.ebf | tee  ebft.tmp
+ebft.bf: ebf.bf ebf.ebf
+	$(INTERPRETER) ${INTREPRETER_FLAGS} ebf.bf < ebf.ebf | tee  ebft.tmp | tools/apply_code.pl object-design/$(LOADING)
 	@perl -e 'while(<>){die("compilation failed: $$_") if( $$_=~ /ERROR/)}' ebft.tmp
 	@mv ebft.tmp ebft.bf
 	@diff -wu ebf.bf ebft.bf || true
@@ -57,12 +63,12 @@ ebf    : ebf.bf
 	$(CC) ebf.c -o ebf
 
 ebf.bf: ebf-bin-bootstrap.bf
-	$(INTERPRETER) ebf-bin-bootstrap.bf < ebf.ebf > ebf.tmp
+	$(INTERPRETER) ebf-bin-bootstrap.bf < ebf.ebf | tee  ebf.tmp | tools/apply_code.pl object-design/$(LOADING)
 	@perl -e 'while(<>){die("compilation failed: $$_") if( $$_=~ /ERROR/)}' ebf.tmp
 	@mv ebf.tmp ebf.bf
 
 clean:
-	rm -rf ebft.bf ebf.bf *.tmp  *~  ebf-compiler-* ebf-*.ebf ebf-bin-* ebf-handcompiled.bf
+	rm -rf ebf ebf.c ebft.bf ebf.bf *.tmp  tools/*.tmp *~  ebf-compiler-* ebf-*.ebf ebf-bin-* ebf-handcompiled.bf
 
 replace: ebft.bf test
 	cp ebft.bf ebf.bf
@@ -70,8 +76,7 @@ replace: ebft.bf test
 binary: ebf-bin.bf
 
 ebf-bin.bf: ebft.bf
-	@cat ebft.bf | perl -pe 's/[^\Q[]<>-+,.\E]//g' > ebf-bin.tmp
-	@tools/apply_code.pl ebf-bin.tmp object-design/$(DESIGN) > ebf-bin.bf
+	@cat ebft.bf | tools/apply_code.pl object-design/$(DESIGN) > ebf-bin.bf
 	@rm -f ebf-bin.tmp
 	@cat ebf-bin.bf
 
@@ -104,11 +109,11 @@ ebf-bin-bootstrap.bf:
 		wget -nv 'http://ebf-compiler.googlecode.com/svn/tags/ebfv1.1.0/ebf.ebf' -O ebf-1.1.0.ebf && \
 		echo "Downloading previous source ebfv1.2.0 to compile it with v1.1.0" && \
 		wget -nv 'http://ebf-compiler.googlecode.com/svn/tags/ebfv1.2.0/ebf.ebf' -O ebf-1.2.0.ebf && \
-		echo "beef ebf-handcompiled.bf < ebf-1.1.0.ebf > ebf-bin-1.1.0.bf" && \
-		beef ebf-handcompiled.bf < ebf-1.1.0.ebf > ebf-bin-1.1.0.bf && \
+		echo "$(JITBF) $(BOOTSTRAP_FLAGS) ebf-handcompiled.bf < ebf-1.1.0.ebf > ebf-bin-1.1.0.bf" && \
+		$(JITBF) $(BOOTSTRAP_FLAGS) ebf-handcompiled.bf < ebf-1.1.0.ebf > ebf-bin-1.1.0.bf && \
 		perl -e 'while(<>){die("compilation failed: $$_") if( $$_=~ /ERROR/)}'  ebf-bin-1.1.0.bf && \
-		echo $(INTERPRETER) "ebf-bin-1.1.0.bf < ebf-1.2.0.ebf > ebf-1.2.0.bf" && \
-		$(INTERPRETER) ebf-bin-1.1.0.bf < ebf-1.2.0.ebf > ebf-bin-1.2.0.bf && \
+		echo $(JITBF) $(BOOTSTRAP_FLAGS) "ebf-bin-1.1.0.bf < ebf-1.2.0.ebf > ebf-1.2.0.bf" && \
+		$(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.1.0.bf < ebf-1.2.0.ebf > ebf-bin-1.2.0.bf && \
 		perl -e 'while(<>){die("compilation failed: $$_") if( $$_=~ /ERROR/)}' ebf-bin-1.2.0.bf && \
 		cp  ebf-bin-1.2.0.bf ebf-bin-bootstrap.bf || false; \
 	fi
