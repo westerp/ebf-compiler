@@ -16,45 +16,47 @@
 # You should have received a copy of the GNU General Public License
 #
 
-open(CODE, $ARGV[0])|| die("Could not open code file: $!");
-my $line = <CODE>;
-chomp($line);
-my @code = split//,$line;
+my @k = split//,'~*{}';
+my $eof = 0;
+open(IMG, $ARGV[0])||die("could not open design file: $!");
+select STDOUT;
+$| = 1;
 
-my $index = 0;
-my $mod = @code;
+sub get_char ()
+{
+    do {
+        $a = getc();
+    } while( defined $a && $a !~ m/[\Q,.[]<>-+\E]/ );
 
-open(IMG, $ARGV[1])||die("could not open design file: $!");
+    return $a if( defined $a);
+    $eof = 1;
+    return $k[int(rand()*@k)];
+}
+
 while(<IMG>)
 {
   foreach $i (split(//,$_))
   {
     #print $i;
-    if( $i eq '#' ){
-        if( $index == $mod ){
-            print "~";
-        } else {
-            print $code[$index];
-            $index++;
-        }
+    if( $i =~ /[#\*]/ ){
+        print get_char();
     } else {
       print $i;
     }
   }
 }
-if( $index <= $mod )
+if( ! $eof  )
 {
  my $c=0;
- while( $index != $mod )
+ while( ! $eof )
  {
    print "\n" if( $c % 80 == 0);
-   print $code[$index];
-   $index++;
+   print get_char();
    $c++;
  }
  while($c % 80 != 0)
  {
-   print "~";
+   print get_char();
    $c++
  }
  print "\n";
