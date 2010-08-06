@@ -1,0 +1,83 @@
+;[
+; $Id$
+; 
+; This file is part of ebf-compiler (test file)
+;
+; ebf-compiler is free software: you can redistribute it and/or modify
+; it under the terms of the GNU General Public License as published by
+; the Free Software Foundation, either version 3 of the License, or
+; (at your option) any later version.
+;
+; ebf-compiler is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; GNU General Public License for more details.
+;
+; You should have received a copy of the GNU General Public License
+; ]
+
+:t tmp
+:i input
+:z zero or adding aide
+:c compare
+
+{e
+  checks for eof
+  $z+$i+[-$z-]$c[@z-$c]
+}
+
+{d
+    divids t with i curent with next
+    $t[->-[>+>>]>[+[-<+>]>+>>]<<<<<]@t 
+    after t=0 i=positive z=n%d c=n/d
+}
+
+{s
+    sets all bits in c as 7 bit ascii
+    $z+++++++++++  11 in z
+  (-$c+++++++++++) 11 in c = 121
+  $c++++++	  127 in c
+}
+
+{m
+    substracts i from c without reducing c below zero
+    $i($t+$c[-$z]$i[$z]$i-)
+
+}
+
+{C $c(-)}
+{Z $z(-)}
+
+$i,(
+   &s set 127 in c
+   i=x|z=0|c=127
+   &m substact i from 127
+
+   $z+	set z
+   $c (&C if c is not zero is 7 bit us ascii
+  	$z-
+	$t.(-)
+   ) 
+   $z(
+       +++++++ adds 7 so we have 8 in z
+    (-$i++++++++) multiply by 8 so we have 64
+    $t
+    &d	divide t with i=64
+    $i(-)
+    +++++++++++  11 in i
+    (-
+	$z+++++++++++ increase n with 121
+    	$c++++++++++++++++++ increase c with 198
+    )
+    $c------  decrease c with 6 so we have set the 2 MSB
+    .         print first utf byte
+    &C
+    $z+++++++ increase z by 6 so we have set the LSB
+    .         print second utf byte
+    &Z
+   )
+   $i,&e
+)
+
+
+	
