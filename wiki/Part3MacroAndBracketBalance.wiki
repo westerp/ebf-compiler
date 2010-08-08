@@ -29,4 +29,6 @@ With Macroes we will need several things.
 
 || stack of brackets(odd) and macro positions(even)||-1|| array of variable positions and macro indexes|| variables ||-2|| macroes delimited by 3 cells of 0's ||-1||input buffer||
 
-Input buffer must be set left to right. All macro definition must be read before the first macro is expanded (since we cannot overwrite the input buffer)
+Input buffer must be set left to right. As long as a Macro cannot be defined in a macro, there is no chance of a macro definition overwriting input buffer. There is no problem in creating macroes after using other macroes since when a macro is inserted the buffer will be empty.
+
+[Part4VarNamesAndMacroPerformance Part4: long variable names and macro expansion performance]
