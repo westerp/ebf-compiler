@@ -1,0 +1,19 @@
+#concern for macro expansion performance and thought on how to implement long names
+
+= Macro expansion performance and long names =
+Again, why the bundling you might ask. Well. I figured half of the macro expansion is 3 copying operations. 
+ * copy from buffer to input
+ * copy from macro to buffer
+ * offset move to correct buffer
+
+The list is not in chroboligic order but the order from longest to shortest time to execute.
+Actually the two first is almost identical in forms of effort since the first have slightly longer way to go and the second increments an extra value for backup.
+
+But I'm not going to take my word for this. I need to benchmark this.
+
+how about a test:
+
+{a this is a macro (repeats 100 times or so)}
+&a
+
+stay tuned
