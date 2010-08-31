@@ -115,3 +115,4 @@ $a;$aERROR;to-undefined;
 &a;&aERROR;macro-undefined-macro;
 {atest&b}&a;&atest&bERROR;macro-call-undefined-macro;
 a{a{bb}};aERROR;macro-definition-in-macro-definition-error;
+{btest}{a&}&ab;&a&btest;incomplete-macro-call;

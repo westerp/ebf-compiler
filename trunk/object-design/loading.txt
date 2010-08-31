@@ -1,6 +1,6 @@
-COMPILING. THIS CAN TAKE OVER 30 SECONDS (each time). ENJOY THE ART
-Art is attributed the original artist. I have merly changed some content
-to be filled in by the application.
+COMPILING. THIS CAN TAKE OVER 17 SECONDS (each time). ENJOY THE ART
+Art is attributed the original artist. I have done some changes to them
+in order to make them apropriate to be filled with brainfuck code.
 
                          ****  *******
                   ************************
