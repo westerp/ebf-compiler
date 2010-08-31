@@ -114,7 +114,7 @@ PTR=1277|3
     define variable end
 }
 
-; implements the ($). It creates the brainfuck codfe to move from the current
+; implements the ($). It creates the brainfuck code to move from the current
 ; position to that position. Trying to move to a prosition not defined with :
 ; prints ERROR.
 {v; variable position
@@ -247,16 +247,16 @@ PTR=1277|3
 ; then it will crean up so that we have the same structure only with added content in buffer
 ; -2|0|macrocontents|0|0|0|..(other macroes)...-1|previous content|stnetnocorcam|0...
 {r; replace do macro
-    $i.(-)$e+                               ; print out i. set error flag
-    read print to v &i $v.                  ; read finished
+    $i.(-)$e+               ; print out i. set error flag
+    read print to v &i $v.  ; read finished
 
     &O                      ; open path to array index like input
-    &C                                  ; move to array value
-    $m(- &B + &F &Z             ; copy n  to c-1 ...
-        $Z +  &C                        ; Z and reset error flag
-    )                                       ; end copy
-    &B(-$z@c$m+$c@z)&F              ; restore original value
-    &R                                 ; close array
+    &C                      ; move to array value
+    $m(- &B + &F &Z         ; copy n  to c-1 ...
+        $Z +  &C            ; Z and reset error flag
+    )                       ; end copy
+    &B(-$z@c$m+$c@z)&F      ; restore original value
+    &R                      ; close array
 
     $Z($e(-)$Z-(- $I>
         [[>]>>]<<+++[--<++]--@M
@@ -273,7 +273,7 @@ PTR=1277|3
         [->>++[->+]-<++[-<+]-<]             ; copy byte to next byte and end of buffer
         >>+[->+]>-<+[-<+]<-<]               ; move 255 to new open space and repeat |0*|0|255|macrocontents|0|nextmacro
     >+>>[ [-<<+>>]>]                        ; copy back to |0*|macrocontents|0|0|0|nextmacro
-    <<->+[->+]++[--<++]-<+[-<+]             ; seek back to cuuent array macro_area
+    <<->+[->+]++[--<++]-<+[-<+]             ; seek back to current array macro_area
     +[-<[<]<<]@Z)
     do macro end
 }
@@ -286,9 +286,22 @@ PTR=1277|3
 {i
         read input to v and output
         $t->+[->+]-->                       set 255 to t then move to first 255 on the right set to 254 move right
-        [[>]- <                             move right until 0 to the right of data set to 255
-        [- <+[-<+]-@t$v+$w+[->+]-<]         copy from oldest data position to v
-        >[+]]                               move to 255 and reset
+        [[>]                                move right until 0 to the right of data
+
+        optimized by dividing input with 8 and moving 8s to v
+        then the remainder so that copy takes fewer moves across data
+        avg data is 67 so on average we move 7 times to increse 8
+        then 3 giving a total of 10 rounds instead of 66
+        ++++++++                            set 8 in the cell next to data
+        <[->-[>+>>]>[+[-<+>]>+>>]<<<<<]     divids input with 8
+        after 0=0 1=positive 2=n%d 3=n/d
+        >>>>-<                              mark 255
+        [- <+[-<+]-@t$v++++++++$w+[->+]-<]  copy result of div from input to v mul 8
+        >+<-<
+        [- <+[-<+]-@t$v+$w+[->+]-<]         copy remainder from from input to v
+        >+<<[-]<                            cleanup
+        ]
+
         ++[--<++]-<                         move to 254 marker set to 255
         +[-<+]@t                            move to t and reset input is in i
         $m+$v[$m-$m]$z                      check if v is set
@@ -338,6 +351,7 @@ end array structure
 :z zero indicates end of array
 :g global variable index
 :G global macro index
+
 :i input
 :t temporary must be next to w and i
 :w working must be between t and a
@@ -363,7 +377,7 @@ input area with bytes written from ne or more macros
 (-<++++(-<++++++++))<<-                             ; multiplied by 32 and then reduced by 1
 [->>>>>>>[>>>>>>>>]+[<<<<<<<<]>]                    ; multiplied by 8 cells = 760 (3 elements)
 >>>>>>>[->>>>>>>>]                                  ; goto 768
-@z ; indicates that we are on m
+@z ; indicates that we are on z
 $o+$M-->>>-
 $v ,(                                               ; outer loop. EOF=0
 
