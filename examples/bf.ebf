@@ -1,0 +1,19 @@
+brainfuck interpreter
+written in ebf
+
+; char differences
+;! (-23) 33
+;+ (-10) 43
+;, (-1) 44
+;- (-1) 45
+;. (-1) 46
+;< (-14) 60
+;> (-2) 62
+L[ (-29) 91
+;] (-2) 93
+
+; optimizations
+; sequences of +-<> => one instruction (upto 254)
+; [-] / [+] => Zsero instruction
+
+
