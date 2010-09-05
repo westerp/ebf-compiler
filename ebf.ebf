@@ -236,8 +236,8 @@ PTR=1277|3
             +[-$t-]$w[@t-$w]    check eof
             $t+                 set t for next run
         )
-    )>>>>-                      set new buffer marker
-    ++[--<++]--@M               go back to ~2
+    )>>>>                       set new buffer marker
+    +[--<++]--@M                go back to ~2
     end macro open tag
 }
 
