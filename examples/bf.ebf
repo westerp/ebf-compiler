@@ -79,7 +79,8 @@ for brackets its
 
 
 >>>[ not open -[ not close >-<
-
+:c command
+:a argument
 :i input
 :t tmp
 :w work
@@ -103,9 +104,12 @@ for brackets its
             (-- 93 close
              ( (-) $t- its a comment we delete )
           $t(-
-
+		close
+		$c+ $a
             ))
          $t(-
+		open
+		$
            ))
         $t(-
           ))
