@@ -1,6 +1,5 @@
 #summary Implementation thoughts on Macroes and Bracket balancing
 
-#summary Implementing bracket balancing
 = implementation of bracket balancing =
 
 We can have nestet bracket and therefor need a stack to handle the positions of closing parenthesis.  So with the current design we have this high level memory map
