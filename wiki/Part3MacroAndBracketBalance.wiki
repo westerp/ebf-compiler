@@ -31,4 +31,4 @@ With Macroes we will need several things.
 
 Input buffer must be set left to right. As long as a Macro cannot be defined in a macro, there is no chance of a macro definition overwriting input buffer. There is no problem in creating macroes after using other macroes since when a macro is inserted the buffer will be empty.
 
-[Part4VarNamesAndMacroPerformance Part4: long variable names and macro expansion performance]
+[Part4MacroPerformance Part4: Macro expansion performance problems]
