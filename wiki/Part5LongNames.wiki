@@ -17,4 +17,4 @@ The current version takes a variable name for each of the commands :,!,$,@,{ and
 = Hash function =
 
 The very easy Bernstein hash is a good choice. 
-For every new character we multiply the currect accumulator with 33 and add the char to accumulator. Overflow will happen but we don't care :)
+For every new character we multiply the currect accumulator with 33 and add the char to accumulator. Overflow will happen but we don't care :) We need to make sure 254 and 255 are not used though.
