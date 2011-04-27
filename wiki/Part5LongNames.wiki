@@ -3,7 +3,7 @@
 
 = Legal variable name syntax =
 
-The current version takes a variable name for each of the commands :,!,$,@,{ and &. A command can follow immediately so $a-b would be goto variable a, reduce, comment "b". We would like our code to be able to run ebf without change so a variable name should be limited to `/[a-zA-z_]/`. As a test i have created an example using variables from ebf to check if a character is within `/[a-zA-Z_]/`. Have a look at [https://code.google.com/p/ebf-compiler/source/browse/trunk/examples/match_word_or_underscore.ebf match_word_or_underscore.ebf] under examples. I'd like to credit {{{(>>[-<]<[>]@m$v-)}}} which is used to identify more than one character withing a range with only one if test to [http://www.hevanet.com/cristofd/brainfuck/intermediate.html Daniel B. Cristofani]
+The current version takes a variable name for each of the commands :,!,$,@,{ and &. A command can follow immediately so $a-b would be goto variable a, reduce, comment "b". We would like our code to be able to run ebf without change so a variable name should be limited to `/[a-zA-z_]/`. As a test i have created an example using variables from ebf to check if a character is within `/[a-zA-Z_]/`. Have a look at [https://code.google.com/p/ebf-compiler/source/browse/trunk/examples/match_word_or_underscore.ebf match_word_or_underscore.ebf] under examples. I'd like to credit {{{(>>[-<]<[>]@m$v-)}}} which is used to identify more than one character within a range with only one if test to [http://www.hevanet.com/cristofd/brainfuck/intermediate.html Daniel B. Cristofani]
 
 = New flow =
 
@@ -18,4 +18,3 @@ The current version takes a variable name for each of the commands :,!,$,@,{ and
 
 The very easy Bernstein hash is a good choice. 
 For every new character we multiply the currect accumulator with 33 and add the char to accumulator. Overflow will happen but we don't care :)
-
