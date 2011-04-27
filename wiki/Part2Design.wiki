@@ -1,4 +1,5 @@
 #summary very first version of the compiler
+#labels Featured
 
 = First draft =
 
