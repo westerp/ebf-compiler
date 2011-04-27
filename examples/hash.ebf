@@ -1,0 +1,72 @@
+;[
+; $Id$
+;
+; This file is part of ebf-compiler (test file)
+;
+; ebf-compiler is free software: you can redistribute it and/or modify
+; it under the terms of the GNU General Public License as published by
+; the Free Software Foundation, either version 3 of the License, or
+; (at your option) any later version.
+;
+; ebf-compiler is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; GNU General Public License for more details.
+;
+; You should have received a copy of the GNU General Public License
+;
+; this file tests hashing of a line using Bernstein hash function
+; h = h*33 + new_char where h is initially 0.
+; This code will eventuelly make it into ebf.ebf as a hash function for variables
+;
+; The follwing perl code does the same thing and used to proof the code for 8 bit cells
+; perl -e '$h=0;$in = <>;chomp $in;foreach $i(split//,$in){$h*=33;$h+=ord($i);$h%=256} print $h . "\n"'
+; ]
+
+
+ML|c|v|m|z|i|t|w|a|d
+
+:c
+:v ;<- char gets here
+:m
+:z
+
+:i input
+:t temporary must be next to w and i
+:w working must be between t and a
+:a adding aide must be next to w
+:d
+
+{i
+    $v, read byte into v
+}
+
+$m+
+(
+  &i
+  ----------
+  (++++++++++
+
+    $t(-$w+) move t to w
+    $w(-$t+++++++++++++++++++++++++++++++++) multiply last value in t by 33 and set back to t
+    $v(-$t+) pour v to t
+    $m+
+  )
+  $m-
+)
+(
+print result
+$i- 255 in i
+$t(
+$w++++++++++ store 10 in v
+$t[->-[>+>>]>[+[-<+>]>+>>]<<<<<]@t     t with w eq 8
+after 0=0 1=positive 2=n%d 3=n/d
+$w(-)
+$a(-$t+)
+$d(-$w+)$w
+@t)
+$w+
+$i+(+++++++++++++++++++++++++++++++++++++++++++++++.(-)<@i+)
+$w(+++++++++++++++++++++++++++++++++++++++++++++++.(-))
+++++++++++.
+)
