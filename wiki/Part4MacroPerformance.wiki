@@ -1,5 +1,5 @@
 #summary concern for macro expansion performance
-#labels performance,optimizing
+#labels performance,optimizing,Featured
 
 = Macro expansion performance problem =
 The 3 rules about optimization are *Don't*, *Don't yet* and *Profile first*. Macro expansion does 3 copying operations. 
