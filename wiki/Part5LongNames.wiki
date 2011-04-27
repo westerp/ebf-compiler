@@ -1,5 +1,5 @@
 #summary Implementation thoughts on long variable names
-#labels hash
+#labels hash,Featured
 
 = Legal variable name syntax =
 
