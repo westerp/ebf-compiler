@@ -1,5 +1,5 @@
 #summary design of new instructions
-#labels design,theory,practice
+#labels design,theory,practice,Featured
 
 = New instruction set =
 
