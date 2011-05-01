@@ -116,5 +116,5 @@ $a;$aERROR;to-undefined;
 &a;&aERROR;macro-undefined-macro;
 {a~test&b}&a;&a~test&bERROR;macro-call-undefined-macro;
 a{a{bb}};aERROR;macro-definition-in-macro-definition-error;
-{b~test}{a&}&ab;&a&b~test;incomplete-macro-call;
-{bba}&b;ERROR;macro-variable-long-error;
+{bba}&b;ERROR;macro-variable-long-body-empty-error;
+>>{my~test}&my;>>&my~test;macro-long-use
