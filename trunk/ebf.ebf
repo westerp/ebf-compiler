@@ -17,7 +17,7 @@
 ; ]
 
 ML|crumble|variable|macro|zero|global|global_macro|8bit|hash|input|tmp|working|adding|position|error|nooverflow|macro_number|flag|zero|macro_area|input_area|tmp|wrk
-PTR=1277|3
+PTR=1285|3
 
 ; #########################################################################################
 ; MACRO DEFINITIONS
@@ -98,7 +98,7 @@ PTR=1277|3
 ; already existing array you will get ERROR
 {s; set variable
     define new variable start
-    $i. &i $v.           readprint i and v
+;    $i. &i $v.           readprint i and v
     &O                   open path to array index like input
 
     error checking code for double assignment
@@ -118,10 +118,11 @@ PTR=1277|3
 ; position to that position. Trying to move to a prosition not defined with :
 ; prints ERROR.
 {v; variable position
+    $e+                                         ; set error
     $o((-)
-    $i.(-)                                  ; print and zero input,
+    $e(-)                                       ; zero input,
 
-    read print to v &i $v.                      ; read finished
+;   read print to v &i $v.                      ; read finished
     $t+
 
     &O                      ; open path to array index like input
@@ -141,7 +142,7 @@ PTR=1277|3
     $i(-$p+)                                ; set current position
 
     $t]>[@t$e+$t->]@w                       ; set error flag if t is not set
-    )+$i((-)$e+)
+    )+
     variable position end
 }
 
@@ -152,7 +153,6 @@ PTR=1277|3
 ; some code by using the same variable structure somewhere else
 ; that it's original location.
 {a; set position @
-    $i. &i $v.  readprint i and v
     $o(-)+      set overflow
     $e+$p(-)-   set error and p to 255
     &O &C       open and go to array value
@@ -177,7 +177,7 @@ PTR=1277|3
 ; criterias will induce ERROR. I have never actually used this, but the
 ; though was to create variables and delete them at will.
 {d;     delete  variable
-        $i.(-) &i $v.$e+         readprint i and v and set error
+        $e+                   set error
         &O &C                 open path and goto array location
         $v(-                  copy v to
             &Z $t + $e(-)     t and reset e
@@ -283,12 +283,10 @@ PTR=1277|3
             <++++++++ increase 8s
             +[-<+]-@t back to t
          )
-         #
          +[->+]          move to and set the byte after input to 0
          ++[--<++]-     reset I to ~1
          <+[-<+]@t      reset t to 0
          $e(-$p+) restore position
-         #
     )
     $e+
 
@@ -428,9 +426,9 @@ input area with bytes written from ne or more macros
 <<<->>>                                             ; set -1
 
 >>>+++                                              ; number of variables in array
-(-<++++(-<++++++++))<<-                             ; multiplied by 32 and then reduced by 1
+(-<++++(-<++++++++))<<                              ; multiplied by 32
 [->>>>>>>[>>>>>>>>]+[<<<<<<<<]>]                    ; multiplied by 8 cells = 760 (3 elements)
->>>>>>>[->>>>>>>>]                                  ; goto 768
+>>>>>>>[->>>>>>>>]                                  ; goto 776
 @z ; indicates that we are on z
 $h++++++++(-$8(-$G++)$G+(-$8+))$8+                  ; stores 256 in 8
 
@@ -454,17 +452,17 @@ $a +++(- $w -----------)                            ; reduce $w with 3*11=33(!)
             ( --                                    ; no, reduce by 2 (@)
              ( $a+++++++(- $w--------) $w---        ; no, reduce by 59 ({)
               ((-) $i . $i(-) $t- )                 ; reset $t and $w
-             $t (- macro    $i(-)+))                ; in {
-            $t (- at &a     $i(-) ))                ; in @
-           $t (- greater &g $i(-) ))                ; in > adjusts pos
-          $t (- lessthan &l $i(-) ))                ; in < adjusts pos. Make sure we don't go below 0.
-         $t (  purge &p     $i(-) ))                ; in ; removes comment
-        $t (- set &s        $i(-) ))                ; in :
-       $t (- close &c       $i(-) ))                ; in ")"
-      $t (- open &o         $i(-) ))                ; in "("
-     $t (- replace          $i.(-)++ ))                ; in &
-    $t (- varmove &v        $i(-) ))                ; move to a ($) (t is 1)
-   $t (- delete &d          $i(-) )                 ; !
+             $t (- macro    $i(-)+      ))          ; in {
+            $t (- at        $i.(-)++    ))          ; in @
+           $t (- greater &g $i(-)       ))          ; in > adjusts pos
+          $t (- lessthan &l $i(-)       ))          ; in < adjusts pos. Make sure we don't go below 0.
+         $t (  purge &p     $i(-)       ))          ; in ; removes comment
+        $t (- set           $i.(-)+++   ))          ; in :
+       $t (- close &c       $i(-)       ))          ; in ")"
+      $t (- open &o         $i(-)       ))          ; in "("
+     $t (- replace          $i.(-)++++  ))          ; in &
+    $t (- varmove           $i.(-)+++++ ))          ; move to a ($) (t is 1)
+   $t (- delete             $i.(-)++++++ )          ; !
 
 
 
@@ -539,21 +537,20 @@ $h(-$v+)
 move c to hash
 $c(-$h+)
 
-
+#
 $i new switch
   (-
    (-
     (-
      (-
-      (-
-       (-$t- delete      d )
-      ) $t (- at         a )
-     ) $t (- set         s )
-    ) $t (- varmove      v )
-   ) $t (- replace       &r )
+      (-$t- delete      &d )
+        $t (- varmove    &v )
+     ) $t (- run macro   &r )
+    ) $t (- set var      &s )
+   ) $t (- at            &a )
   ) $t (- macro def      &m )
  )
- $w(-$c(-)$e++) set error flag
+ $w (-$c(-)$e++) set error flag
 )
 check for error
 $t+                                                 ; set flag
