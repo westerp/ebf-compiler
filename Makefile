@@ -21,7 +21,7 @@ INTREPRETER_FLAGS =
 BOOTSTRAP_FLAGS = --eof 0
 JITBF = tools/jitbf
 CC = gcc -O2
-DESIGN = genie23rds.txt
+DESIGN = bunny.txt
 LOADING = loading.txt
 
 test: 	$(INTERPRETER).test.tmp

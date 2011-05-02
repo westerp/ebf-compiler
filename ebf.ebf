@@ -452,7 +452,7 @@ $a +++(- $w -----------)                            ; reduce $w with 3*11=33(!)
             ( --                                    ; no, reduce by 2 (@)
              ( $a+++++++(- $w--------) $w---        ; no, reduce by 59 ({)
               ((-) $i . $i(-) $t- )                 ; reset $t and $w
-             $t (- macro    $i(-)+      ))          ; in {
+             $t (- macro    $i+++.(-)+      ))      ; in {
             $t (- at        $i.(-)++    ))          ; in @
            $t (- greater &g $i(-)       ))          ; in > adjusts pos
           $t (- lessthan &l $i(-)       ))          ; in < adjusts pos. Make sure we don't go below 0.
@@ -490,14 +490,14 @@ $i( if i is set
       this means it is set eg no match against lower case letters
       $m-                reset m
       $z(-)              reset z
-  ))))
+  )26)5)8)
   if m is set then we matched /\w|_/i
   $m(-
       $e(-)+ set e
       $h(-$w+) move h to w
       $w(-$h+++++++++++++++++++++++++++++++++) multiply last value in t by 33 and set back to h
-      $t+$i[$c.$t-]>[->]@w print char if non zero i eg not macro def
-      $c(-$h+) pour c to h
+      ;$t+$i[$c.$t-]>(-@t) print char if non zero i eg not macro def
+      $c.(-$h+) pour c to h
       $z+
     )
     $z(-$m+)
