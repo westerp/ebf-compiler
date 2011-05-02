@@ -399,11 +399,13 @@ start array structure
 end array structure
 
 :z zero indicates end of array
+
 :g global variable index
 :G global macro index
 
 :8 zero if 8 bit
 :h hash
+
 :i input
 :t temporary must be next to w and i
 :w working must be between t and a
@@ -430,8 +432,8 @@ input area with bytes written from ne or more macros
 [->>>>>>>[>>>>>>>>]+[<<<<<<<<]>]                    ; multiplied by 8 cells = 760 (3 elements)
 >>>>>>>[->>>>>>>>]                                  ; goto 776
 @z ; indicates that we are on z
-$h++++++++(-$8(-$G++)$G+(-$8+))$8+                  ; stores 256 in 8
-
+;$h++++++++(-$8(-$G++)$G+(-$8+))                     ; stores 255 in 8
+$h++++++(-$G++++++(-$8+++++++))$8-                  ; stores 251 in 8
 $o+$M-->>>-
 $v ,(                                               ; outer loop. EOF=0
 
@@ -490,14 +492,13 @@ $i( if i is set
       this means it is set eg no match against lower case letters
       $m-                reset m
       $z(-)              reset z
-  )26)5)8)
+  ))))
   if m is set then we matched /\w|_/i
   $m(-
       $e(-)+ set e
       $h(-$w+) move h to w
-      $w(-$h+++++++++++++++++++++++++++++++++) multiply last value in t by 33 and set back to h
-      ;$t+$i[$c.$t-]>(-@t) print char if non zero i eg not macro def
-      $c.(-$h+) pour c to h
+      $w(-$h++) double h
+      $c.-(-$h+) pour c to h
       $z+
     )
     $z(-$m+)
@@ -509,16 +510,16 @@ $e(-$t+) copy e to t
 $w+ set working to 1
 $t($w-
 
-for other cell sizes than 8 the array will be overflown need reduce
-hash to be below 256
+implementations with more than 8 bits might have large number
+when dealing with long variable names but we do a mod 251
 $8(
   $i(-$a+) move i to a
-  $8(-$i+)  copy 256 to i
+  $8(-$i+)  copy 251 to i
   8|h|i|t|w|a
   $h(-$i-
      [>-]>
        (-@t
-        $8(-$i+)-$i+ put 256 back to i
+        $8(-$i+)-$i+ put 251 back to i
        )
        $t+$8+
        )
@@ -526,13 +527,14 @@ $8(
    $w+
 )
 $w(-
- $i(-$8+) restore 256 to 8
+ $i(-$8+) restore 251 to 8
  $a(-$i+) restore i
 )
 
 hash is now  new input
 move hash to v
-$h(-$v+)
+increase once to make it between 1 and 252
+$h+(-$v+)
 
 move c to hash
 $c(-$h+)
