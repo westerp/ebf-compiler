@@ -354,9 +354,11 @@ PTR=1285|3
 
         ++[--<++]-<                         move to 254 marker set to 255
         +[-<+]@t                            move to t and reset input is in i
-        $m+$v[$m-$m]$z                      check if v is set
+        $m+$v[$m-]$z                        check if v is set
         [@m- $v, $z]                        if then we read from stdin
 
+        $m+$v+[-$m-]$z                      convert ~1 to 0
+        [@m-$z]
 }
 
 ; Often used macroes and because of speed moved
@@ -454,7 +456,7 @@ $a +++(- $w -----------)                            ; reduce $w with 3*11=33(!)
             ( --                                    ; no, reduce by 2 (@)
              ( $a+++++++(- $w--------) $w---        ; no, reduce by 59 ({)
               ((-) $i . $i(-) $t- )                 ; reset $t and $w
-             $t (- macro    $i+++.(-)+      ))      ; in {
+             $t (- macro    $i+++.(-)+  ))          ; in {, output ~
             $t (- at        $i.(-)++    ))          ; in @
            $t (- greater &g $i(-)       ))          ; in > adjusts pos
           $t (- lessthan &l $i(-)       ))          ; in < adjusts pos. Make sure we don't go below 0.
