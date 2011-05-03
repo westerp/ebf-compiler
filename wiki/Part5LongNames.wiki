@@ -13,8 +13,9 @@ The current version takes a variable name for each of the commands :,!,$,@,{ and
  * if the char last read is not [a-zA-Z_] (except first char), that is put in a location for further use.
  * a last switch checks and arund appropriate macro and macroes are changed to retrieve byte from a predefined location (v) instead of reading.
  * read routine needs to check for left over char first, before checking buffer and stdin.
+ * macro create should add leftover char to macro.
+ * macro expand needs to move leftover char to buffer so that it will be interpreted after the body of the macro.
 
 = Hash function =
 
-The very easy Bernstein hash is a good choice. 
-For every new character we multiply the currect accumulator with 33 and add the char to accumulator. Overflow will happen but we don't care :) We need to make sure 254 and 255 are not used though.
+At first I though the very easy Bernstein hash ( h = h*33 + new_val ) was a good choice, but that algorithm is good when we have larger cell sizes and arrays. I ended up having to reduce the value to something below 256 and the larger cell size the slower implementation. The actual method used now is h = h*2 + new_val-1 and h is then mod 251-ed and incremented so we have from 1 to 251 as values.
