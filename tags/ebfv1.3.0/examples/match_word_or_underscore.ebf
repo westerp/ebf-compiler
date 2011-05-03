@@ -1,0 +1,56 @@
+;[
+; $Id$
+;
+; This file is part of ebf-compiler (test file)
+;
+; ebf-compiler is free software: you can redistribute it and/or modify
+; it under the terms of the GNU General Public License as published by
+; the Free Software Foundation, either version 3 of the License, or
+; (at your option) any later version.
+;
+; ebf-compiler is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; GNU General Public License for more details.
+;
+; You should have received a copy of the GNU General Public License
+;
+; this file tests if read char is matching upper or lower case letters,
+; numbers or underscore. If it does not it writes a # instead
+; this code will eventuelly make it into ebf.ebf as a variable-char identifier
+; ]
+ML|c|v|m|z
+
+:c
+:v ;<- char gets here
+:m
+:z
+
+$m+(-$v,
+$v(-$c+$z+) zerocopy v to c and z
+$m++++++(-$z--------) reduce z by 48 ascii 0
+$v+++++++++          set 9 to v
+(>>[-<]<[>]@m$v-)    z sub v
+$m+$z(               set m goto v check set
+  this means it is set eg no match for digits
+  --------           reduce z by 8 A
+  $m++++(-$v+++++)$v set 25 to v
+  (>>[-<]<[>]@m$v-)  z sub v
+  $m+$z(
+    this means it is set eg no match again for upper case letters
+    -----              reduce z by 5 _
+    (--                check for underscore reduce by 2 ascii a
+    $m++++(-$v+++++)$v set 25 to v
+    (>>[-<]<[>]@m$v-)  z sub v
+    $m+$z(
+    this means it is set qg no match against lower case letters
+    $m-                reset m
+    $z(-)              reset z
+))))
+if m is set then we matched /\w|_/i and we continue
+$v+$m(-$v-)+
+$v(++++(-$m+++++++)$m-.(-))
+$m(-$c.)+$c(-)
+)
+
+
