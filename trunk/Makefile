@@ -46,7 +46,7 @@ $(INTERPRETER).test-bin.tmp: ebf-bin.bf tools/test.sh
 	tools/test.sh "$(INTERPRETER) ${INTREPRETER_FLAGS}" ebf-bin.bf
 	tools/test.sh "$(INTERPRETER)" ebf-bin.bf
 	tools/test.sh "$(JITBF) --perl" ebf-bin.bf
-	#tools/test.sh bf ebf-bin.bf
+	tools/test.sh bf ebf-bin.bf
 	tools/test.sh beef ebf-bin.bf
 	@touch $(INTERPRETER).test-bin.tmp
 
