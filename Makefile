@@ -21,7 +21,7 @@ INTREPRETER_FLAGS =
 BOOTSTRAP_FLAGS = --eof 0
 JITBF = tools/jitbf
 CC = gcc -O2
-DESIGN = bunny.txt
+DESIGN = genie23rds.txt
 LOADING = loading.txt
 
 test: 	$(INTERPRETER).test.tmp
@@ -82,7 +82,7 @@ ebf-bin.bf: ebft.bf
 
 release: version replace binary
 	@rm -rf ebf-compiler-$(REV).tar.gz  bf-compiler-$(REV).zip ebf-compiler-$(REV)
-	svn copy  -m "tagged release ebfv$$REV" $(SVNREPO)/trunk  $(SVNREPO)/tags/ebfv$(REV);
+	svn copy   $(SVNREPO)/trunk  $(SVNREPO)/tags/ebfv$(REV);
 	svn export $(SVNREPO)/tags/ebfv$(REV) ebf-compiler-$(REV)
 	cp ebf-bin.bf ebf-compiler-$(REV)
 	zip -r ebf-compiler-$(REV).zip ebf-compiler-$(REV)
@@ -90,7 +90,7 @@ release: version replace binary
 
 version:
 	@if [ "$$REV" != "" -a "x`echo $$REV|sed 's/[\.0-9]//g'`" = "x" ]; then \
-		echo "tag will be ebfv$$REV ($$REV)";\
+		echo "tag will be ebfv$$REV ($$REVN)";\
 		true;\
 	else \
 		echo "REV=$$REV is invalid. You need to pass release REV=<revision> where revision is numbers separated by ."; \
