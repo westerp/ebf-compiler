@@ -22,31 +22,31 @@ PTR=1285|3
 ; #########################################################################################
 ; MACRO DEFINITIONS
 
-; prints out ERROR if stack set
-{e;              error if stack set
-                ; need to check stack for uneven brackets
-                $z+[-<+]<
-                    [
-                    >>+++++++++[->++++++++<]>---                    ; prints ERROR using previous block
-                    .+++++++++++++..---.+++.                        ; and both previous and cuurent block is zero after
-                    (-)++++++++++.(-)
-                ]
+; stack_error prints out ERROR if stack set
+; It is used in the end of the application
+{print_if_stack_error
+    $z+[-<+]<
+    [                                   ; need to check stack for uneven brackets
+        >>+++++++++[->++++++++<]>---    ; prints ERROR using previous block
+        .+++++++++++++..---.+++.        ; and both previous and cuurent block is zero after
+        (-)++++++++++.(-)
+    ]
 }
 
 ; macro for implementing the > which increases the pointer or
 ; resets overflow. for normal operation overflow is always set
-{g  $i.$a+$p+++[$a-]$w[@a-$o(-)$p-$w]$p-- }
+{go_up $i.$a+$p+++[$a-]$w[@a-$o(-)$p-$w]$p-- }
 
 ; macro for implementing the < which decreases the pointer or
 ; resets overflow. for normal operation overflow is always set
-{l  $i. $a+$p[-$a-]$w[@a-$o(-)$w] }
+{go_down $i. $a+$p[-$a-]$w[@a-$o(-)$w] }
 
 ; implements removal of comments. Because of the newline we don't reuse this
-{p (,----------)++++++++++.(-) }                    ; purge comments
+{rm_comment (,----------)++++++++++.(-) }                    ; purge comments
 
 ; auto alighning bracket. ( is the one of two '(' and ')' where ( sets a stack
 ; to the position it is nowe and print out a  [.
-{o; open brackets
+{open
     $o((-)
     $t+++++++(-$i+++++++)$i++.(-) ; convert "(" to "[" by adding 51
     $a-$w+[-<+]-@d                ; seek to -1
@@ -64,7 +64,7 @@ PTR=1285|3
 
 ; auto alighning bracket. ) is the second of two '(' and ')' where ) pops the stack
 ; and creates the command to move to that location before changing ) to a ]
-{c; close bracket
+{close
     $o((-)
     $i(-)                we need i
     $w-$t+[-<+]--        move backwards to stack ; -1 set to -2
@@ -96,20 +96,20 @@ PTR=1285|3
 ; implements the (:). It defines a variable in pretty much the same
 ; way it defines a macro_area but justs leave it at that. If you redefine
 ; already existing array you will get ERROR
-{s; set variable
+{var_create
     define new variable start
 ;    $i. &i $v.           readprint i and v
-    &O                   open path to array index like input
+    &array_open                   open path to array index like input
 
     error checking code for double assignment
-    &C                   go to array
-    $v((-) &Z $e+ &C)    when v i set then set e
-    &Z                   go from array
+    &array_element                   go to array
+    $v((-) &array_back $e+ &array_element)    when v i set then set e
+    &array_back                   go from array
 
     $g+(- $t+            copy incremented g
-       &C $v+            to t_backup and var location
-       &Z )              go back
-    &C&R                 close array
+       &array_element $v+            to t_backup and var location
+       &array_back )              go back
+    &array_element&array_close                 close array
     $t(- $g+)            restore g
     define variable end
 }
@@ -117,7 +117,7 @@ PTR=1285|3
 ; implements the ($). It creates the brainfuck code to move from the current
 ; position to that position. Trying to move to a prosition not defined with :
 ; prints ERROR.
-{v; variable position
+{var_move
     $e+                                         ; set error
     $o((-)
     $e(-)                                       ; zero input,
@@ -125,12 +125,12 @@ PTR=1285|3
 ;   read print to v &i $v.                      ; read finished
     $t+
 
-    &O                      ; open path to array index like input
-    &C                                  ; if zero it is not defined.
+    &array_open                      ; open path to array index like input
+    &array_element                                  ; if zero it is not defined.
     $v(- &B+ &F@v$z @z(@c)          ; copy v to c-1 ...
-        $i + $a + &C )                    ; i and a
+        $i + $a + &array_element )                    ; i and a
         &B(-&F+$c@z)&F@v          ; restore original value
-        &R                               ; close array
+        &array_close                               ; close array
     <++++++(->++++++++++)                   ; 60 in z (<)
 
     error checking is i 0 set e to 2 t is still 1
@@ -152,15 +152,15 @@ PTR=1285|3
 ; reading this code you see that it is also used to simplify
 ; some code by using the same variable structure somewhere else
 ; that it's original location.
-{a; set position @
+{var_position_set
     $o(-)+      set overflow
     $e+$p(-)-   set error and p to 255
-    &O &C       open and go to array value
+    &array_open &array_element       open and go to array value
     $v(-        copy v
      &B + &F    to backup
-     &Z         move from array
+     &array_back         move from array
       $p + $e(-)and to p and reset e
-     &C         move to array
+     &array_element         move to array
     )           end copy
 
     restore backup
@@ -168,7 +168,7 @@ PTR=1285|3
       &F+$c@z
     )&F
 
-    &R         close array
+    &array_close         close array
     set position end
 }
 
@@ -176,13 +176,13 @@ PTR=1285|3
 ; the last variabel created and need to be defined. Failing both these
 ; criterias will induce ERROR. I have never actually used this, but the
 ; though was to create variables and delete them at will.
-{d;     delete  variable
+{var_delete                   delete  variable
         $e+                   set error
-        &O &C                 open path and goto array location
+        &array_open &array_element                 open path and goto array location
         $v(-                  copy v to
-            &Z $t + $e(-)     t and reset e
-            &C )
-        &R                    close array
+            &array_back $t + $e(-)     t and reset e
+            &array_element )
+        &array_close                    close array
         $t(-$i+$g-)           copy to i while reducing both g and t
         $g((-)$e+$i(-))       t is 0 if g is not 0 we have error
         $i(-$g+)$g-           restore g
@@ -193,17 +193,16 @@ PTR=1285|3
 ; to the end where the next macro (or input buffer) should be. It moves the
 ; input bufer accordingly. It is not allowed to define macroes inside macroes and
 ; therefor you will never have input in buffer when in this part of the code.
-{m; macro open tag
-;    $v,                 read input into v macro definitions cannot come from macroes
-    &O                  open path to array index like input
+{macro_create
+    &array_open                  open path to array index like input
 
     error checking code for double assignment
-    &C$m((-)            move to variable check if non zero
-    &Z $e+ &C)          when non zero set e ; ERROR
-    &Z                  back to z
+    &array_element$m((-)            move to variable check if non zero
+    &array_back $e+ &array_element)          when non zero set e ; ERROR
+    &array_back                  back to z
 
-    $G+(- $t+ &C$m+&Z ) increment G and copy g to t and n
-    &C&R                clear trail
+    $G+(- $t+ &array_element$m+&array_back ) increment G and copy g to t and n
+    &array_element&array_close                clear trail
     $t(- $G+)           restore new G
 
     there is always a ~1 where input starts and its to the right of where macro should have its first char
@@ -258,7 +257,7 @@ PTR=1285|3
 ; 0|macrocontents|-1|0|0| => 0|-1|macrocontents|0|0|..(other macroes)...-2|previous content|stnetnocorcam|0|-1
 ; then it will crean up so that we have the same structure only with added content in buffer
 ; -2|0|macrocontents|0|0|0|..(other macroes)...-1|previous content|stnetnocorcam|0...
-{r; replace do macro
+{run_macro
 
     since macro will add to buffer and everything in hash is an intermidiate cache we need to move hash
     to the buffer so it does not get processed first
@@ -290,13 +289,13 @@ PTR=1285|3
     )
     $e+
 
-    &O                      ; open path to array index like input
-    &C                      ; move to array value
-    $m(- &B + &F &Z         ; copy n  to c-1 ...
-        $Z +  &C            ; Z and reset error flag
+    &array_open                      ; open path to array index like input
+    &array_element                      ; move to array value
+    $m(- &B + &F &array_back         ; copy n  to c-1 ...
+        $Z +  &array_element            ; Z and reset error flag
     )                       ; end copy
     &B(-$z@c$m+$c@z)&F      ; restore original value
-    &R                      ; close array
+    &array_close                      ; close array
 
     $Z($e(-)$Z-(- $I>
         [[>]>>]<<+++[--<++]--@M
@@ -367,19 +366,19 @@ PTR=1285|3
 ; Open array path. It expects v to contain a ascii and will
 ; tag the bread crumb until they are at that ascii values
 ; position.
-{O      $v(-$c(@z)+@z(@c))                          open array path
+{array_open      $v(-$c(@z)+@z(@c))                          open array path
 }
-; Rerset array. Must be at the forct set bread crumb and will
+; Rerset array. Must be at the furthest set bread crumb and will
 ; remove that flag on it's way to zero.
-{R      $z(@c-)                                     reset array
+{array_close     $z(@c-)                                     reset array
 }
 ; Crumble. Will move crubles until the first 0 is met. This is
 ; by definition the active array element
-{C      $c(@z)                                      move left
+{array_element   $c(@z)                                      move left
 }
 ; Zero. Same as Cruble but reverse. It moves from array
 ; to variable position
-{Z      $z(@c)                                      move right
+{array_back      $z(@c)                                      move right
 }
 ; Back and Forward. Used to backup any value in array to be restored after copy.
 {B      $c@z$c }; backward to copy
@@ -456,19 +455,17 @@ $a +++(- $w -----------)                            ; reduce $w with 3*11=33(!)
             ( --                                    ; no, reduce by 2 (@)
              ( $a+++++++(- $w--------) $w---        ; no, reduce by 59 ({)
               ((-) $i . $i(-) $t- )                 ; reset $t and $w
-             $t (- macro    $i+++.(-)+  ))          ; in {, output ~
-            $t (- at        $i.(-)++    ))          ; in @
-           $t (- greater &g $i(-)       ))          ; in > adjusts pos
-          $t (- lessthan &l $i(-)       ))          ; in < adjusts pos. Make sure we don't go below 0.
-         $t (  purge &p     $i(-)       ))          ; in ; removes comment
-        $t (- set           $i.(-)+++   ))          ; in :
-       $t (- close &c       $i(-)       ))          ; in ")"
-      $t (- open &o         $i(-)       ))          ; in "("
-     $t (- replace          $i.(-)++++  ))          ; in &
-    $t (- varmove           $i.(-)+++++ ))          ; move to a ($) (t is 1)
-   $t (- delete             $i.(-)++++++ )          ; !
-
-
+               $t (- macro      $i+++.(-)+  )       ; in {, output ~, set 1 in i
+             ) $t (- at         $i.(-)++    )       ; in @, outpuy @, set 2 in i
+            )  $t (- &go_up     $i(-)       )       ; run go_right since > adjusts pos
+           )   $t (- &go_down   $i(-)       )       ; run go_left since < adjusts pos
+          )    $t (  &rm_comment$i(-)       )       ; in ; removes comment
+         )     $t (- set        $i.(-)+++   )       ; in :
+        )      $t (- &close     $i(-)       )       ; in ")"
+       )       $t (- &open      $i(-)       )       ; in "("
+      )        $t (- replace    $i.(-)++++  )       ; in &
+     )         $t (- varmove    $i.(-)+++++ )       ; move to a ($) (t is 1)
+    )          $t (- delete     $i.(-)++++++)       ; !
 
 
 $i( if i is set
@@ -547,12 +544,12 @@ $i new switch
    (-
     (-
      (-
-      (-$t- delete      &d )
-        $t (- varmove    &v )
-     ) $t (- run macro   &r )
-    ) $t (- set var      &s )
-   ) $t (- at            &a )
-  ) $t (- macro def      &m )
+      (-$t- &var_delete     )
+        $t (- &var_move     )
+     ) $t (- &run_macro     )
+    ) $t (- &var_create     )
+   ) $t (- &var_position_set)
+  ) $t (- &macro_create     )
  )
  $w (-$c(-)$e++) set error flag
 )
@@ -569,4 +566,4 @@ $m+$v+   check for ~1
 [-$m-]   at eof if in this
 $z[@m->] ))                                      ; loop until read EOF == 0/ -1/ no change
 
-&e
+&print_if_stack_error
