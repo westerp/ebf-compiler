@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 
 SVNREPO = https://ebf-compiler.googlecode.com/svn
-INTERPRETER = tools/jitbf
+INTERPRETER = tools/jitbf8
 INTREPRETER_FLAGS =
 BOOTSTRAP_FLAGS = --eof 0
 JITBF = tools/jitbf
@@ -59,7 +59,7 @@ ebft.bf: ebf.bf ebf.ebf
 	@diff -wu ebf.bf ebft.bf || true
 
 ebf    : ebf.bf
-	$(JITBF) -p ebf.bf > ebf.c
+	$(JITBF) --fuzzy -p ebf.bf > ebf.c
 	$(CC) ebf.c -o ebf
 
 ebf.bf: ebf-bin-bootstrap.bf
@@ -109,13 +109,18 @@ ebf-bin-bootstrap.bf:
 		wget -nv 'http://ebf-compiler.googlecode.com/svn/tags/ebfv1.1.0/ebf.ebf' -O ebf-1.1.0.ebf && \
 		echo "Downloading previous source ebfv1.2.0 to compile it with v1.1.0" && \
 		wget -nv 'http://ebf-compiler.googlecode.com/svn/tags/ebfv1.2.0/ebf.ebf' -O ebf-1.2.0.ebf && \
-		echo "$(JITBF) $(BOOTSTRAP_FLAGS) ebf-handcompiled.bf < ebf-1.1.0.ebf > ebf-bin-1.1.0.bf" && \
-		$(JITBF) $(BOOTSTRAP_FLAGS) ebf-handcompiled.bf < ebf-1.1.0.ebf > ebf-bin-1.1.0.bf && \
-		perl -e 'while(<>){die("compilation failed: $$_") if( $$_=~ /ERROR/)}'  ebf-bin-1.1.0.bf && \
-		echo $(JITBF) $(BOOTSTRAP_FLAGS) "ebf-bin-1.1.0.bf < ebf-1.2.0.ebf > ebf-1.2.0.bf" && \
-		$(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.1.0.bf < ebf-1.2.0.ebf > ebf-bin-1.2.0.bf && \
-		perl -e 'while(<>){die("compilation failed: $$_") if( $$_=~ /ERROR/)}' ebf-bin-1.2.0.bf && \
-		cp  ebf-bin-1.2.0.bf ebf-bin-bootstrap.bf || false; \
+		echo "Downloading previous source ebfv1.3.0 to compile it with v1.2.0" && \
+		wget -nv 'http://ebf-compiler.googlecode.com/svn/tags/ebfv1.3.0/ebf.ebf' -O ebf-1.3.0.ebf && \
+		echo "tools/pure_ebf.pl ebf-1.1.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-handcompiled.bf > ebf-bin-1.1.0.bf" && \
+		tools/pure_ebf.pl ebf-1.1.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-handcompiled.bf > ebf-bin-1.1.0.bf && \
+		tools/ebf_error.pl ebf-bin-1.1.0.bf && \
+		echo "tools/pure_ebf.pl ebf-1.2.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.1.0.bf > ebf-bin-1.2.0.bf" && \
+		tools/pure_ebf.pl ebf-1.2.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.1.0.bf > ebf-bin-1.2.0.bf && \
+		tools/ebf_error.pl ebf-bin-1.2.0.bf && \
+		echo "tools/pure_ebf.pl ebf-1.3.0.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.2.0.bf > ebf-bin-1.3.0.bf" && \
+		tools/pure_ebf.pl ebf-1.3.0.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.2.0.bf > ebf-bin-1.3.0.bf && \
+		tools/ebf_error.pl ebf-bin-1.3.0.bf && \
+		cp  ebf-bin-1.3.0.bf ebf-bin-bootstrap.bf || false; \
 	fi
 
 help:
@@ -123,9 +128,10 @@ help:
 	@echo actually tries to get previous versions of the compiler source from tags in the svn repository.
 	@echo
 	@echo The compile chain done is the reverse of this dependency tree:
-	@echo 1. ebf.ebf in this release requires binary from ebf-1.2.0 or newer
-	@echo 2. ebf-1.2.0 requires binary from ebf-1.1.0 or newer
-	@echo 3. ebf-1.1.0 requires binary from any previous version of ebf. It will work with the first hand.compiled version.
+	@echo 1. ebf.ebf in this release requires binary from ebf-1.3.0 or newer
+	@echo 2. ebf-1.3.0 requires binary from ebf-1.2.0 or newer (we use 1.2.2 because of performance gain)
+	@echo 3. ebf-1.2.0 requires binary from ebf-1.1.0 or newer
+	@echo 4. ebf-1.1.0 requires binary from any previous version of ebf. It will work with the first hand.compiled version.. 
 	@echo
 	@echo "All packed releases has a binary from it's own version and the bootstrap resolver will use that if it exists."
 	@echo
