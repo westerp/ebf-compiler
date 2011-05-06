@@ -45,7 +45,7 @@ PTR=1285|3
 {rm_comment (,----------)++++++++++.(-) }                    ; purge comments
 
 ; auto alighning bracket. ( is the one of two '(' and ')' where ( sets a stack
-; to the position it is nowe and print out a  [.
+; to the position it is nowe and print out a Â [.
 {open
     $o((-)
     $t+++++++(-$i+++++++)$i++.(-) ; convert "(" to "[" by adding 51
@@ -60,6 +60,28 @@ PTR=1285|3
     $a+$w(-$p+)
     )+$i(.(-)$e+)
     open brackets end
+}
+
+{macrun #
+  push position on stack
+    $a-$w+[-<+]-@d                ; seek to -1
+    $r @r(@d) +                   ; mark
+    @d(@r)+[->+]-@a               ; first zero, then first -1
+
+    $p(-$w++[-<+]-@d
+        $r @r(@d) $d+
+        @d(@r)+[->+]-@a           ; first zero, then first -1
+        )
+    $a+$w(-$p+)
+    macrun end #
+}
+
+{macrend #
+  remove position on stack
+    $a-$w+[-<+]-@d                ; seek to -1
+    $r @r(@d) $d(-)               ; delete
+    @r$d(@r)+[->+]@a              ; move back
+  macrend end #
 }
 
 ; auto alighning bracket. ) is the second of two '(' and ')' where ) pops the stack
@@ -261,10 +283,10 @@ PTR=1285|3
 
     since macro will add to buffer and everything in hash is an intermidiate cache we need to move hash
     to the buffer so it does not get processed first
-    $h(
+    $i+$h(
         move position to error
         $p(-$e+)
-        $i++++++++                            set 8 in the cell next to data
+        $i+++++++                             set 8 in the cell next to data
         <[->-[>+>>]>[+[-<+>]>+>>]<<<<<]@h     divids input with 8
         after h=0 i=any t=n%d w=n/d
         this assumes t w and a and e are 0
@@ -282,10 +304,15 @@ PTR=1285|3
             <++++++++ increase 8s
             +[-<+]-@t back to t
          )
-         +[->+]          move to and set the byte after input to 0
+         +[->+]++          move to and set the byte after input to 2 eg end of macro
          ++[--<++]-     reset I to ~1
          <+[-<+]@t      reset t to 0
          $e(-$p+) restore position
+    )
+    $i(- special case where h is not set
+      +[->+]-        goto start of input
+      [>]++           set it to 1 eg end of macro
+      ++[--<++]--@M  go back to M
     )
     $e+
 
@@ -314,6 +341,11 @@ PTR=1285|3
     >+>>[ [-<<+>>]>]                        ; copy back to |0*|macrocontents|0|0|0|nextmacro
     <<->+[->+]++[--<++]-<+[-<+]             ; seek back to current array macro_area
     +[-<[<]<<]@Z)
+
+    +[->+]-        goto start of input
+    [>]+           set it to 1 eg start of macro
+    ++[--<++]--@M  go back to M
+
     do macro end
 }
 
@@ -438,13 +470,14 @@ $h++++++(-$G++++++(-$8+++++++))$8-                  ; stores 251 in 8
 $o+$M-->>>-
 $v ,(                                               ; outer loop. EOF=0
 
-; copy $i to $w
 (- $t+ $w+)                                         ; pour $i to $w and $t
 $t(- $i+)                                           ; pour $t to $i
 +                                                   ; i=I|t=1|w=I|p=x
 ; switch
-$a +++(- $w -----------)                            ; reduce $w with 3*11=33(!)
- $w (---                                            ; no, reduce $w with 3($)
+$w-                                                 ; reduce $w by 1 (start of macro expanded)
+  (-                                                ; no, reduce by 1 (end of macro expanded)
+   (-$a+++(- $w ----------)$w                       ; reduce $w with -1-3*10=33(!)
+    (---                                            ; no, reduce $w with 3($)
      (--                                            ; no, reduce $w with 2 (&)
       (--                                           ; no  reduce $w with 2 "("
        (-                                           ; no  reduce $w with 1 ")"
@@ -466,6 +499,8 @@ $a +++(- $w -----------)                            ; reduce $w with 3*11=33(!)
       )        $t (- replace    $i.(-)++++  )       ; in &
      )         $t (- varmove    $i.(-)+++++ )       ; move to a ($) (t is 1)
     )          $t (- delete     $i.(-)++++++)       ; !
+   )           $t (- &macrend   $i--        )       ; end of macro
+  )            $t (- &macrun    $i-         )       ; macro start
 
 
 $i( if i is set
@@ -538,7 +573,6 @@ $h+(-$v+)
 move c to hash
 $c(-$h+)
 
-#
 $i new switch
   (-
    (-
