@@ -88,15 +88,15 @@ PTR=1285|3
   move to position in stack
   with possible numeric operand for offset indication
   $w-$t+[-<+]--@d                 ; seek to -1 set to -2
-  $r (@d) -                       ; delete set -1
+  $r( (@d) -                       ; delete set -1
   $d                              ; tmp|-1|x....
   [ [->+]-@w                      ; reduce
     $a+$i+
     +[-<+]-
     <<+>>>> ]
   <<+<<@r(->>>>+)                 ; restore stack
-  [>>]<<+                         ; retore marker from -2 to -1
-  [->+]@w
+  >>>>[>>]@r)<<+>                  ; retore marker from -2 to -1
+  +[->+]@w$t+#                    ; move back and increase t
   &posmove
 }
 ; auto alighning bracket. ) is the second of two '(' and ')' where ) pops the stack
@@ -509,7 +509,7 @@ $w-                                                 ; reduce $w by 1 (start of m
          ( -                                        ; no, reduce by 1 (;)
           ( -                                       ; no, reuce by 1 (<)
            ( --                                     ; no, reuce by 2 (>)
-            ( --  #                                  ; no, reduce by 2 (@)
+            ( --                                    ; no, reduce by 2 (@)
              ( $a+++(- $w----------) $w             ; no, reduce by 30 (^)
               ( $a+++(- $w----------) $w+           ; no, reduce by 29 ({)
                ((-) $i . $i(-) $t- )                ; reset $t and $w
