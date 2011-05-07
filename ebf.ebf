@@ -62,7 +62,7 @@ PTR=1285|3
     open brackets end
 }
 
-{macrun #
+{macrun
   push position on stack
     $a-$w+[-<+]-@d                ; seek to -1
     $r @r(@d) +                   ; mark
@@ -73,17 +73,32 @@ PTR=1285|3
         @d(@r)+[->+]-@a           ; first zero, then first -1
         )
     $a+$w(-$p+)
-    macrun end #
+    macrun end
 }
 
-{macrend #
+{macrend
   remove position on stack
     $a-$w+[-<+]-@d                ; seek to -1
     $r @r(@d) $d(-)               ; delete
     @r$d(@r)+[->+]@a              ; move back
-  macrend end #
+  macrend end
 }
 
+{param #
+  move to position in stack
+  with possible numeric operand for offset indication
+  $w-$t+[-<+]--@d                 ; seek to -1 set to -2
+  $r (@d) -                       ; delete set -1
+  $d                              ; tmp|-1|x....
+  [ [->+]-@w                      ; reduce
+    $a+$i+
+    +[-<+]-
+    <<+>>>> ]
+  <<+<<@r(->>>>+)                 ; restore stack
+  [>>]<<+                         ; retore marker from -2 to -1
+  [->+]@w
+  &posmove
+}
 ; auto alighning bracket. ) is the second of two '(' and ')' where ) pops the stack
 ; and creates the command to move to that location before changing ) to a ]
 {close
@@ -153,9 +168,19 @@ PTR=1285|3
         $i + $a + &array_element )                    ; i and a
         &B(-&F+$c@z)&F@v          ; restore original value
         &array_close                               ; close array
-    <++++++(->++++++++++)                   ; 60 in z (<)
+      &posmove
+    )+
+    variable position end
+}
 
-    error checking is i 0 set e to 2 t is still 1
+
+; Assumes we have a position in i and a
+; where we want to move and create < and >
+; to do so. Used by both varmove and param 
+{posmove
+    $z<++++++(->++++++++++)                   ; 60 in z (<)
+
+    error checking is i 0 set e t is still 1
     $i[-$t-$w+$a-
     ; we have new position in i and old in p
     $p( $a [-$w-]<[@w-
@@ -164,16 +189,15 @@ PTR=1285|3
     $i(-$p+)                                ; set current position
 
     $t]>[@t$e+$t->]@w                       ; set error flag if t is not set
-    )+
-    variable position end
 }
+
 
 ; implements the at (@). After an uneven loop you may use @ to
 ; indicate where amoungst the variables the  applicatuion is.
 ; trying to indicate a non existing variable will induce ERROR
 ; reading this code you see that it is also used to simplify
 ; some code by using the same variable structure somewhere else
-; that it's original location.
+; than it's original location.
 {var_position_set
     $o(-)+      set overflow
     $e+$p(-)-   set error and p to 255
@@ -485,10 +509,12 @@ $w-                                                 ; reduce $w by 1 (start of m
          ( -                                        ; no, reduce by 1 (;)
           ( -                                       ; no, reuce by 1 (<)
            ( --                                     ; no, reuce by 2 (>)
-            ( --                                    ; no, reduce by 2 (@)
-             ( $a+++++++(- $w--------) $w---        ; no, reduce by 59 ({)
-              ((-) $i . $i(-) $t- )                 ; reset $t and $w
+            ( --  #                                  ; no, reduce by 2 (@)
+             ( $a+++(- $w----------) $w             ; no, reduce by 30 (^)
+              ( $a+++(- $w----------) $w+           ; no, reduce by 29 ({)
+               ((-) $i . $i(-) $t- )                ; reset $t and $w
                $t (- macro      $i+++.(-)+  )       ; in {, output ~, set 1 in i
+              )$t (- $i.(-) &param          )       ; in ^, move to call position
              ) $t (- at         $i.(-)++    )       ; in @, outpuy @, set 2 in i
             )  $t (- &go_up     $i(-)       )       ; run go_right since > adjusts pos
            )   $t (- &go_down   $i(-)       )       ; run go_left since < adjusts pos
