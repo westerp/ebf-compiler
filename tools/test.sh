@@ -120,4 +120,8 @@ a{a{bb}};a~aERROR;macro-definition-in-macro-definition-error;
 {bba}&b;~bbaERROR;macro-variable-long-body-empty-error;
 >>{my~test}&my;>>~my&my~test;macro-long-use
 >:test:test2:test3$test$test3;>:test:test2:test3$test<$test3>>;long-variable-goto
+^;^ERROR;parameter-non-macro
+{q>^}&q;~q&q>^<;parameter-simple-once
+{times_c:t1:t2(-$c(-$t2+$t1+)$t2(-$c+))$t1(-^+)!t2!t1}:c:d$c+++$d++++&times_c;~times_c:c:d$c+++$d>++++&times_c:t1:t2[-$c<[-$t2>>>+$t1<+<<]$t2>>>[-$c<<<+>>>]<<]$t1>[-^<+>]!t2!t1;parameter-complex
+{t1>>&t2^}{t2>>,(-^+)}&t1;~t1~t2&t1>>&t2>>,[-^<<+>>]^<<<<;parameter-nested
 
