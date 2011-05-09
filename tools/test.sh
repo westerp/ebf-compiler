@@ -45,15 +45,15 @@ for i in $(grep -A9999 "${NAME}NAME" $0);  do
         desc=$(echo $i| cut -d\; -f3| sed 's/\-/ /g')
         todo=$(echo $i| cut -d\; -f4)
         tests=$[$tests+1]
-        echo -en "\r                                                                             \r"
+        echo -en "\r                                                                                                       \r"
         echo -en "test $tests: $desc"
         ret=$(echo -n "$test1" | $INTERPRENTER  $EBF)
         if [ "$ret" != "$exp" ]; then
                 if [ "$todo" = "todo"  -o "$todo" = "warn" ]; then
-                    echo warning $desc: \"$ret\" != \"$exp\"
+                    echo " warning: \"$ret\" != proof \"$exp\""
                     todos=$[$todos+1]
                 else
-                    echo " ERROR $test1: \"$ret\" != proof \"$exp\""
+                    echo " ERROR: \"$ret\" != proof \"$exp\""
                     nok=$[$nok+1]
                 fi
         else
@@ -124,4 +124,15 @@ a{a{bb}};a~aERROR;macro-definition-in-macro-definition-error;
 {q>^}&q;~q&q>^<;parameter-simple-once
 {times_c:t1:t2(-$c(-$t2+$t1+)$t2(-$c+))$t1(-^+)!t2!t1}:c:d$c+++$d++++&times_c;~times_c:c:d$c+++$d>++++&times_c:t1:t2[-$c<[-$t2>>>+$t1<+<<]$t2>>>[-$c<<<+>>>]<<]$t1>[-^<+>]!t2!t1;parameter-complex
 {t1>>&t2^}{t2>>,(-^+)}&t1;~t1~t2&t1>>&t2>>,[-^<<+>>]^<<<<;parameter-nested
+{t^1}&t;~t&t^1>;parameter-move-simple
+{t^2}&t;~t&t^2>>;parameter-move-simple-2
+{add_by_a$a(-^0+^1+)^1(-$a+)}:a+++>++&add_by_a;~add_by_a:a+++>++&add_by_a$a<[-^0>+^1>+<<]^1>>[-$a<<+>>];parameter-complex
+*5>;*5>>>>>;multiplication-single
+*10>;*10>>>>>>>>>>;multiplication-multiple
+:a*5>$a;:a*5>>>>>$a<<<<<;multiplication-pointer-movement;
+:a*3<$a;:a*3<<<$aERROR;multiplication-pointer-movement;
+:a*254>$a;:a*254>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>$aERROR;multiplication-254-overflow-Not-to-worry-if-your-interprenter-does-more-than-8-bits;warn
+%"test";;create-string;todo
+|"test";;print-string;todo
+
 

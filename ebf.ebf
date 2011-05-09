@@ -84,21 +84,61 @@ PTR=1285|3
   macrend end
 }
 
-{param #
+{param
   move to position in stack
   with possible numeric operand for offset indication
+  &I
+  $v(-$m+$z+)
+  $v++++++(-$m--------)
+  $c+++++++++
+  (>>[-<]<[>]@v$c-)
+  $v+$m((-)$v-$z(-$h+))
+  $v($z.$v+++++(-$z--------))    ; print out parameter, reduce to number
   $w-$t+[-<+]--@d                 ; seek to -1 set to -2
-  $r( (@d) -                       ; delete set -1
+  $r( (@d) -                      ; delete set -1
   $d                              ; tmp|-1|x....
   [ [->+]-@w                      ; reduce
     $a+$i+
     +[-<+]-
     <<+>>>> ]
   <<+<<@r(->>>>+)                 ; restore stack
-  >>>>[>>]@r)<<+>                  ; retore marker from -2 to -1
-  +[->+]@w$t+#                    ; move back and increase t
+  >>>>[>>]@r)<<+>                 ; retore marker from -2 to -1
+  +[->+]@w$t+                     ; move back and increase t
+  $i[ $z(-$i+$a+) $t-]
+  $w(@t-)$t+
   &posmove
 }
+
+
+
+; multiply the next operation by parameter count
+; only supports cell size increase
+{multiply
+  $t(-
+    &I    ; read input into v
+    $v.(-$m+$z+$i+)               copy to m z and i
+    $v++++++++(-$m------$z------) reduce by 48
+    $c+++++++++                   ser 9 in c
+    (>>[-<]<[>]@v$c-)             m sub c
+    $v+
+    $m (   m was not number
+        $z(-)
+        check for lt and gt and update postion and reset nooverflow if overflow
+        $m---(
+        --( (-) $v- $w(-(-$i.)) )
+          $v (- #$p+++ $w(-(>>[+<]<[>]@a$i.$w-)) $a+$p[--<-]$w(-@a$o(-)) )       ; >
+        ) $v (- #$w(-(>>[-<]<[>]@a$i.$w-)) $a+$p[-<-]$w(-@a$o(-)) )              ; <
+        $t- set t to ~1
+      )
+    $v(-          m was number
+        $w(-$a++++++++++)$a(-$w+)
+        $z(-$w+)
+      )
+    $i(-)
+    $t+
+  )
+}
+
 ; auto alighning bracket. ) is the second of two '(' and ')' where ) pops the stack
 ; and creates the command to move to that location before changing ) to a ]
 {close
@@ -158,8 +198,6 @@ PTR=1285|3
     $e+                                         ; set error
     $o((-)
     $e(-)                                       ; zero input,
-
-;   read print to v &i $v.                      ; read finished
     $t+
 
     &array_open                      ; open path to array index like input
@@ -222,7 +260,7 @@ PTR=1285|3
 ; the last variabel created and need to be defined. Failing both these
 ; criterias will induce ERROR. I have never actually used this, but the
 ; though was to create variables and delete them at will.
-{var_delete                   delete  variable
+{var_del                   delete  variable
         $e+                   set error
         &array_open &array_element                 open path and goto array location
         $v(-                  copy v to
@@ -307,10 +345,10 @@ PTR=1285|3
 
     since macro will add to buffer and everything in hash is an intermidiate cache we need to move hash
     to the buffer so it does not get processed first
-    $i+$h(
+    $h(
         move position to error
         $p(-$e+)
-        $i+++++++                             set 8 in the cell next to data
+        $i++++++++                            set 8 in the cell next to data
         <[->-[>+>>]>[+[-<+>]>+>>]<<<<<]@h     divids input with 8
         after h=0 i=any t=n%d w=n/d
         this assumes t w and a and e are 0
@@ -332,11 +370,6 @@ PTR=1285|3
          ++[--<++]-     reset I to ~1
          <+[-<+]@t      reset t to 0
          $e(-$p+) restore position
-    )
-    $i(- special case where h is not set
-      +[->+]-        goto start of input
-      [>]++           set it to 1 eg end of macro
-      ++[--<++]--@M  go back to M
     )
     $e+
 
@@ -489,7 +522,7 @@ input area with bytes written from ne or more macros
 [->>>>>>>[>>>>>>>>]+[<<<<<<<<]>]                    ; multiplied by 8 cells = 760 (3 elements)
 >>>>>>>[->>>>>>>>]                                  ; goto 776
 @z ; indicates that we are on z
-;$h++++++++(-$8(-$G++)$G+(-$8+))                     ; stores 255 in 8
+;$h++++++++(-$8(-$G++)$G+(-$8+))+                     ; stores 255 in 8
 $h++++++(-$G++++++(-$8+++++++))$8-                  ; stores 251 in 8
 $o+$M-->>>-
 $v ,(                                               ; outer loop. EOF=0
@@ -505,29 +538,30 @@ $w-                                                 ; reduce $w by 1 (start of m
      (--                                            ; no, reduce $w with 2 (&)
       (--                                           ; no  reduce $w with 2 "("
        (-                                           ; no  reduce $w with 1 ")"
-        ( $a++++(- $w---- ) $w-                     ; no, reduce $w with 17(:)
-         ( -                                        ; no, reduce by 1 (;)
-          ( -                                       ; no, reuce by 1 (<)
-           ( --                                     ; no, reuce by 2 (>)
-            ( --                                    ; no, reduce by 2 (@)
-             ( $a+++(- $w----------) $w             ; no, reduce by 30 (^)
-              ( $a+++(- $w----------) $w+           ; no, reduce by 29 ({)
-               ((-) $i . $i(-) $t- )                ; reset $t and $w
-               $t (- macro      $i+++.(-)+  )       ; in {, output ~, set 1 in i
-              )$t (- $i.(-) &param          )       ; in ^, move to call position
-             ) $t (- at         $i.(-)++    )       ; in @, outpuy @, set 2 in i
-            )  $t (- &go_up     $i(-)       )       ; run go_right since > adjusts pos
-           )   $t (- &go_down   $i(-)       )       ; run go_left since < adjusts pos
-          )    $t (  &rm_comment$i(-)       )       ; in ; removes comment
-         )     $t (- set        $i.(-)+++   )       ; in :
-        )      $t (- &close     $i(-)       )       ; in ")"
-       )       $t (- &open      $i(-)       )       ; in "("
-      )        $t (- replace    $i.(-)++++  )       ; in &
-     )         $t (- varmove    $i.(-)+++++ )       ; move to a ($) (t is 1)
-    )          $t (- delete     $i.(-)++++++)       ; !
-   )           $t (- &macrend   $i--        )       ; end of macro
-  )            $t (- &macrun    $i-         )       ; macro start
-
+        (-                                          ; no, reduce $w with 1 "*"
+         ( $a++++(- $w---- ) $w                     ; no, reduce $w with 16(:)
+          ( -                                       ; no, reduce by 1 (;)
+           ( -                                      ; no, reuce by 1 (<)
+            ( --                                    ; no, reuce by 2 (>)
+             ( --                                   ; no, reduce by 2 (@)
+              ( $a+++(- $w----------) $w            ; no, reduce by 30 (^)
+               ( $a+++(- $w----------) $w+          ; no, reduce by 29 ({)
+                ((-) $i . $i(-) $t- )               ; reset $t and $w
+                $t (- macro      $i+++.(-)+  )      ; in {, output ~, set 1 in i
+               )$t (- $i.(-) &param          )      ; in ^, move to call position
+              ) $t (- at         $i.(-)++    )      ; in @, outpuy @, set 2 in i
+             )  $t (- &go_up     $i(-)       )      ; run go_right since > adjusts pos
+            )   $t (- &go_down   $i(-)       )      ; run go_left since < adjusts pos
+           )    $t (  &rm_comment$i(-)       )      ; in ; removes comment
+          )     $t (- set        $i.(-)+++   )      ; in :
+         )      $t (  $i.(-) &multiply       )      ; in *
+        )       $t (- &close     $i(-)       )      ; in ")"
+       )        $t (- &open      $i(-)       )      ; in "("
+      )         $t (- replace    $i.(-)++++  )      ; in &
+     )          $t (- varmove    $i.(-)+++++ )      ; move to a ($) (t is 1)
+    )           $t (- delete     $i.(-)++++++)      ; !
+   )            $t (- &macrend   $i--        )      ; end of macro
+  )             $t (- &macrun    $i-         )      ; macro start
 
 $i( if i is set
 - reduce i
@@ -604,7 +638,7 @@ $i new switch
    (-
     (-
      (-
-      (-$t- &var_delete     )
+      (-$t- &var_del        )
         $t (- &var_move     )
      ) $t (- &run_macro     )
     ) $t (- &var_create     )
