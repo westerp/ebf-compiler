@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU General Public License
 
 SVNREPO = https://ebf-compiler.googlecode.com/svn
-INTERPRETER = tools/jitbf8
-INTREPRETER_FLAGS =
+INTERPRETER = tools/jitbf
+INTREPRETER_FLAGS = -b 8
 BOOTSTRAP_FLAGS = --eof 0
 JITBF = tools/jitbf
 CC = gcc -O2
@@ -53,22 +53,22 @@ $(INTERPRETER).test-bin.tmp: ebf-bin.bf tools/test.sh
 compile: ebft.bf
 
 ebft.bf: ebf.bf ebf.ebf
-	$(INTERPRETER) ${INTREPRETER_FLAGS} ebf.bf < ebf.ebf | tee  ebft.tmp | tools/apply_code.pl object-design/$(LOADING)
-	@perl -e 'while(<>){die("compilation failed: $$_") if( $$_=~ /ERROR/)}' ebft.tmp
-	@mv ebft.tmp ebft.bf
-	@diff -wu ebf.bf ebft.bf || true
+	$(INTERPRETER) ${INTREPRETER_FLAGS} ebf.bf < ebf.ebf | tee  ebft.tmp | tools/apply_code.pl object-design/$(LOADING) && \
+	tools/ebf_error.pl ebft.tmp && \
+	mv ebft.tmp ebft.bf && \
+	diff -wu ebf.bf ebft.bf || false
 
 ebf    : ebf.bf
 	$(JITBF) --fuzzy -p ebf.bf > ebf.c
 	$(CC) ebf.c -o ebf
 
 ebf.bf: ebf-bin-bootstrap.bf
-	$(INTERPRETER) ebf-bin-bootstrap.bf < ebf.ebf | tee  ebf.tmp | tools/apply_code.pl object-design/$(LOADING)
-	@perl -e 'while(<>){die("compilation failed: $$_") if( $$_=~ /ERROR/)}' ebf.tmp
-	@mv ebf.tmp ebf.bf
+	$(INTERPRETER) ebf-bin-bootstrap.bf < ebf.ebf | tee  ebf.tmp | tools/apply_code.pl object-design/$(LOADING) && \
+	tools/ebf_error.pl ebf.tmp && \
+	mv ebf.tmp ebf.bf || false
 
 clean:
-	rm -rf ebf ebf.c ebft.bf ebf.bf *.tmp  tools/*.tmp *~  ebf-compiler-* ebf-*.ebf ebf-bin-* ebf-handcompiled.bf
+	rm -rf ebf ebf.c ebft.bf ebf.bf *.tmp  tools/*.tmp *~  ebf-compiler-* ebf-*.ebf ebf-bin-* ebf-handcompiled.bf*
 
 replace: ebft.bf test
 	cp ebft.bf ebf.bf
@@ -76,9 +76,7 @@ replace: ebft.bf test
 binary: ebf-bin.bf
 
 ebf-bin.bf: ebft.bf
-	@cat ebft.bf | tools/apply_code.pl object-design/$(DESIGN) > ebf-bin.bf
-	@rm -f ebf-bin.tmp
-	@cat ebf-bin.bf
+	@cat ebft.bf | tools/apply_code.pl object-design/$(DESIGN) | tee ebf-bin.bf
 
 release: version replace binary
 	@rm -rf ebf-compiler-$(REV).tar.gz  bf-compiler-$(REV).zip ebf-compiler-$(REV)
@@ -111,14 +109,14 @@ ebf-bin-bootstrap.bf:
 		wget -nv 'http://ebf-compiler.googlecode.com/svn/tags/ebfv1.2.0/ebf.ebf' -O ebf-1.2.0.ebf && \
 		echo "Downloading previous source ebfv1.3.0 to compile it with v1.2.0" && \
 		wget -nv 'http://ebf-compiler.googlecode.com/svn/tags/ebfv1.3.0/ebf.ebf' -O ebf-1.3.0.ebf && \
-		echo "tools/pure_ebf.pl ebf-1.1.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-handcompiled.bf > ebf-bin-1.1.0.bf" && \
-		tools/pure_ebf.pl ebf-1.1.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-handcompiled.bf > ebf-bin-1.1.0.bf && \
+		echo "tools/strip_ebf1-1.3.0.pl ebf-1.1.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-handcompiled.bf > ebf-bin-1.1.0.bf" && \
+		tools/strip_ebf1-1.3.0.pl ebf-1.1.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-handcompiled.bf > ebf-bin-1.1.0.bf && \
 		tools/ebf_error.pl ebf-bin-1.1.0.bf && \
-		echo "tools/pure_ebf.pl ebf-1.2.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.1.0.bf > ebf-bin-1.2.0.bf" && \
-		tools/pure_ebf.pl ebf-1.2.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.1.0.bf > ebf-bin-1.2.0.bf && \
+		echo "tools/strip_ebf1-1.3.0.pl ebf-1.2.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.1.0.bf > ebf-bin-1.2.0.bf" && \
+		tools/strip_ebf1-1.3.0.pl ebf-1.2.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.1.0.bf > ebf-bin-1.2.0.bf && \
 		tools/ebf_error.pl ebf-bin-1.2.0.bf && \
-		echo "tools/pure_ebf.pl ebf-1.3.0.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.2.0.bf > ebf-bin-1.3.0.bf" && \
-		tools/pure_ebf.pl ebf-1.3.0.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.2.0.bf > ebf-bin-1.3.0.bf && \
+		echo "tools/strip_ebf1-1.3.0.pl ebf-1.3.0.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.2.0.bf > ebf-bin-1.3.0.bf" && \
+		tools/strip_ebf1-1.3.0.pl ebf-1.3.0.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.2.0.bf > ebf-bin-1.3.0.bf && \
 		tools/ebf_error.pl ebf-bin-1.3.0.bf && \
 		cp  ebf-bin-1.3.0.bf ebf-bin-bootstrap.bf || false; \
 	fi
@@ -129,7 +127,7 @@ help:
 	@echo
 	@echo The compile chain done is the reverse of this dependency tree:
 	@echo 1. ebf.ebf in this release requires binary from ebf-1.3.0 or newer
-	@echo 2. ebf-1.3.0 requires binary from ebf-1.2.0 or newer (we use 1.2.2 because of performance gain)
+	@echo 2. ebf-1.3.0 requires binary from ebf-1.2.0 or newer
 	@echo 3. ebf-1.2.0 requires binary from ebf-1.1.0 or newer
 	@echo 4. ebf-1.1.0 requires binary from any previous version of ebf. It will work with the first hand.compiled version.. 
 	@echo
