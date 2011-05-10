@@ -18,7 +18,7 @@
 SVNREPO = https://ebf-compiler.googlecode.com/svn
 INTERPRETER = tools/jitbf
 INTREPRETER_FLAGS = -b 8
-BOOTSTRAP_FLAGS = --eof 0
+BOOTSTRAP_FLAGS = --eof 0 -b 32
 JITBF = tools/jitbf
 CC = gcc -O2
 DESIGN = bunny.txt
@@ -63,7 +63,7 @@ ebf    : ebf.bf
 	$(CC) ebf.c -o ebf
 
 ebf.bf: ebf-bin-bootstrap.bf
-	$(INTERPRETER) ebf-bin-bootstrap.bf < ebf.ebf | tee  ebf.tmp | tools/apply_code.pl object-design/$(LOADING) && \
+	$(INTERPRETER) $(BOOTSTRAP_FLAGS) ebf-bin-bootstrap.bf < ebf.ebf | tee  ebf.tmp | tools/apply_code.pl object-design/$(LOADING) && \
 	tools/ebf_error.pl ebf.tmp && \
 	mv ebf.tmp ebf.bf || false
 
