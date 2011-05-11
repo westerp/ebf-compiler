@@ -16,8 +16,8 @@
 ; You should have received a copy of the GNU General Public License
 ; ]
 
-ML|crumble|variable|macro|zero|global|global_macro|8bit|hash|input|tmp|working|adding|position|error|nooverflow|macro_number|flag|zero|macro_area|input_area|tmp|wrk
-PTR=1285|3
+;ML|crumble|variable|macro|zero|global|global_macro|8bit|hash|input|tmp|working|adding|position|error|nooverflow|macro_number|flag|zero|macro_area|input_area|tmp|wrk
+;PTR=1285|3
 
 ; #########################################################################################
 ; MACRO DEFINITIONS
@@ -126,8 +126,8 @@ PTR=1285|3
         check for lt and gt and update postion and reset nooverflow if overflow
         $m---(
         --( (-) $v- $w(-(-$i.)) )
-          $v (- #$p+++ $w(-(>>[+<]<[>]@a$i.$w-)) $a+$p[--<-]$w(-@a$o(-)) )       ; >
-        ) $v (- #$w(-(>>[-<]<[>]@a$i.$w-)) $a+$p[-<-]$w(-@a$o(-)) )              ; <
+          $v (- $p+++ $w(-(>>[+<]<[>]@a$i.$w-)) $a+$p[--<-]$w(-@a$o(-)) )       ; >
+        ) $v (- $w(-(>>[-<]<[>]@a$i.$w-)) $a+$p[-<-]$w(-@a$o(-)) )              ; <
         $t- set t to ~1
       )
     $v(-          m was number
@@ -137,6 +137,30 @@ PTR=1285|3
     $i(-)
     $t+
   )
+}
+
+; print_string takes a string parameter double quotes
+; expects that the current cell and next cell are empty 
+{print_string
+  print_string implementation
+  +[->+]->      ; we're at the beginning of buffer
+  [             ; we have data in buffer
+    [>]         ; move to end. mark it as a
+    :m1:char:sep:quote:chardiv:divisor:modulus:result
+    @sep
+    $sep(-$quote+)              ; copy first byte of buffer to quote
+
+    $char+(-                            ; while buffer not empty
+     (-$sep+$quote-$chardiv+$divisor)   ; copy to sep to many locations, sub with quote for comparison
+      $quote
+      ( 
+     $divisor++++++++++         ; initial guess is 10
+     $chardiv &divmod @chardiv
+
+    ))
+    !result!modulus!divisor!chardiv!quote!sep!char!m1
+  ]
+  ++[--<++]--@M
 }
 
 ; auto alighning bracket. ) is the second of two '(' and ')' where ) pops the stack
@@ -175,7 +199,6 @@ PTR=1285|3
 ; already existing array you will get ERROR
 {var_create
     define new variable start
-;    $i. &i $v.           readprint i and v
     &array_open                   open path to array index like input
 
     error checking code for double assignment
@@ -293,7 +316,7 @@ PTR=1285|3
     lets copy h there
     $h(- $t->+[->+]-<++[-<+]@t )
     $t+[->+]
-    |B|F|Z|test|0|0|test2|0|0|0|~1
+;    |B|F|Z|test|0|0|test2|0|0|0|~1
 ;    $M>>[[>]>>>]
 ;    >(-)                remove marker
     @t to make this easy we assume we are at t
@@ -308,7 +331,7 @@ PTR=1285|3
                 $w+
             )$t (-                           in close macro ;eg }
                 $i(-)$t+
-                h=char|i=0|t=1|w=0
+;                h=char|i=0|t=1|w=0
                 $h[>]
                 >(-)
                 >(@i no char in macro error
@@ -342,44 +365,43 @@ PTR=1285|3
 ; then it will crean up so that we have the same structure only with added content in buffer
 ; -2|0|macrocontents|0|0|0|..(other macroes)...-1|previous content|stnetnocorcam|0...
 {run_macro
-
-    since macro will add to buffer and everything in hash is an intermidiate cache we need to move hash
-    to the buffer so it does not get processed first
+;   since macro will add to buffer and everything in hash is an intermidiate cache we need to move hash
+;   to the buffer so it does not get processed first
     $h(
         move position to error
         $p(-$e+)
         $i++++++++                            set 8 in the cell next to data
-        <[->-[>+>>]>[+[-<+>]>+>>]<<<<<]@h     divids input with 8
-        after h=0 i=any t=n%d w=n/d
-        this assumes t w and a and e are 0
-        $i(-)->+[->+]-- set I to ~2
-        [>]>- set first byte to the right of input to ~1
+        <&divmod@h                            divids input with 8
+;        after h=0 i=any t=n%d w=n/d
+;        this assumes t w and a and e are 0
+        $i(-)->+[->+]-- ;set I to ~2
+        [>]>-           ;set first byte to the right of input to ~1
         <+[-<+]-@i
         $t(
-            [->+]-    reduce by 1 and move to the byte after input
-            <+        increase 1s
-            +[-<+]-@i back to i
+            [->+]-      ;reduce by 1 and move to the byte after input
+            <+          ;increase 1s
+            +[-<+]-@i   ;back to i
          )
          $i+$t-
         $w(
-            [->+]-    reduce by 1 and move to the byte after input
-            <++++++++ increase 8s
-            +[-<+]-@t back to t
+            [->+]-      ;reduce by 1 and move to the byte after input
+            <++++++++   ;increase 8s
+            +[-<+]-@t   ;back to t
          )
-         +[->+]++          move to and set the byte after input to 2 eg end of macro
-         ++[--<++]-     reset I to ~1
-         <+[-<+]@t      reset t to 0
-         $e(-$p+) restore position
+         +[->+]++       ;move to and set the byte after input to 2 eg end of macro
+         ++[--<++]-     ;reset I to ~1
+         <+[-<+]@t      ;reset t to 0
+         $e(-$p+)       ;restore position
     )
     $e+
 
-    &array_open                      ; open path to array index like input
-    &array_element                      ; move to array value
-    $m(- &B + &F &array_back         ; copy n  to c-1 ...
-        $Z +  &array_element            ; Z and reset error flag
-    )                       ; end copy
-    &B(-$z@c$m+$c@z)&F      ; restore original value
-    &array_close                      ; close array
+    &array_open                 ; open path to array index like input
+    &array_element              ; move to array value
+    $m(- &B + &F &array_back    ; copy n  to c-1 ...
+        $Z +  &array_element    ; Z and reset error flag
+    )                           ; end copy
+    &B(-$z@c$m+$c@z)&F          ; restore original value
+    &array_close                ; close array
 
     $Z($e(-)$Z-(- $I>
         [[>]>>]<<+++[--<++]--@M
@@ -426,12 +448,12 @@ PTR=1285|3
         $t->+[->+]-->                       set 255 to t then move to first 255 on the right set to 254 move right
         [[>]                                move right until 0 to the right of data
 
-        optimized by dividing input with 8 and moving 8s to v
-        then the remainder so that copy takes fewer moves across data
-        avg data is 67 so on average we move 7 times to increse 8
-        then 3 giving a total of 10 rounds instead of 66
+;        optimized by dividing input with 8 and moving 8s to v
+;        then the remainder so that copy takes fewer moves across data
+;        avg data is 67 so on average we move 7 times to increse 8
+;        then 3 giving a total of 10 rounds instead of 66
         ++++++++                            set 8 in the cell next to data
-        <[->-[>+>>]>[+[-<+>]>+>>]<<<<<]     divids input with 8
+        <&divmod                            divids input with 8
         after 0=0 1=positive 2=n%d 3=n/d
         >>>>-<                              mark 255
         [- <+[-<+]-@t$v++++++++$w+[->+]-<]  copy result of div from input to v mul 8
@@ -472,6 +494,9 @@ PTR=1285|3
 ; Back and Forward. Used to backup any value in array to be restored after copy.
 {B      $c@z$c }; backward to copy
 {F      $z@c$v }; forward from copy
+
+; this does the divmod. compiler is fuzzy after so caller must fix position to calling
+{divmod[->-[>+>>]>[+[-<+>]>+>>]<<<<<]}
 
 ; End macro definitions
 ; ###########################################################################
@@ -546,48 +571,50 @@ $w-                                                 ; reduce $w by 1 (start of m
              ( --                                   ; no, reduce by 2 (@)
               ( $a+++(- $w----------) $w            ; no, reduce by 30 (^)
                ( $a+++(- $w----------) $w+          ; no, reduce by 29 ({)
-                ((-) $i . $i(-) $t- )               ; reset $t and $w
-                $t (- macro      $i+++.(-)+  )      ; in {, output ~, set 1 in i
-               )$t (- $i.(-) &param          )      ; in ^, move to call position
-              ) $t (- at         $i.(-)++    )      ; in @, outpuy @, set 2 in i
-             )  $t (- &go_up     $i(-)       )      ; run go_right since > adjusts pos
-            )   $t (- &go_down   $i(-)       )      ; run go_left since < adjusts pos
-           )    $t (  &rm_comment$i(-)       )      ; in ; removes comment
-          )     $t (- set        $i.(-)+++   )      ; in :
-         )      $t (  $i.(-) &multiply       )      ; in *
-        )       $t (- &close     $i(-)       )      ; in ")"
-       )        $t (- &open      $i(-)       )      ; in "("
-      )         $t (- replace    $i.(-)++++  )      ; in &
-     )          $t (- varmove    $i.(-)+++++ )      ; move to a ($) (t is 1)
-    )           $t (- delete     $i.(-)++++++)      ; !
-   )            $t (- &macrend   $i--        )      ; end of macro
-  )             $t (- &macrun    $i-         )      ; macro start
+                (-                                  ; no, reduce by 1 (|)
+                 ((-) $i . $i(-) $t- )              ; reset $t and $w
+                 $t (- $i.(-) &print_string   )     ; in |. create code that prints string
+                )$t (- macro      $i+++.(-)+  )     ; in {, output ~, set 1 in i
+               ) $t (- $i.(-) &param          )     ; in ^, move to call position
+              )  $t (- at         $i.(-)++    )     ; in @, outpuy @, set 2 in i
+             )   $t (- &go_up     $i(-)       )     ; run go_right since > adjusts pos
+            )    $t (- &go_down   $i(-)       )     ; run go_left since < adjusts pos
+           )     $t (  &rm_comment$i(-)       )     ; in ; removes comment
+          )      $t (- set        $i.(-)+++   )     ; in :
+         )       $t (  $i.(-) &multiply       )     ; in *
+        )        $t (- &close     $i(-)       )     ; in ")"
+       )         $t (- &open      $i(-)       )     ; in "("
+      )          $t (- replace    $i.(-)++++  )     ; in &
+     )           $t (- varmove    $i.(-)+++++ )     ; move to a ($) (t is 1)
+    )            $t (- delete     $i.(-)++++++)     ; !
+   )             $t (- &macrend   $i--        )     ; end of macro
+  )              $t (- &macrun    $i-         )     ; macro start
 
 $i( if i is set
 - reduce i
  $m+(-
-    &I read first variable char
-    $v(-$c+$z+) zerocopy v to c and z
-    $m++++++(-$z--------) reduce z by 48 ascii 0
-    $v+++++++++          set 9 to v
-    (>>[-<]<[>]@m$v-)    z sub v
-    $m+$z(               set m goto v check set
-     this means it is set eg no match for digits
-     --------           reduce z by 8 A
-     $m++++(-$v+++++)$v set 25 to v
-     (>>[-<]<[>]@m$v-)  z sub v
+    &I                          ; read first variable char
+    $v(-$c+$z+)                 ; zerocopy v to c and z
+    $m++++++(-$z--------)       ; reduce z by 48 ascii 0
+    $v+++++++++                 ; set 9 to v
+    (>>[-<]<[>]@m$v-)           ; z sub v
+    $m+$z(                      ; set m goto v check set
+     ;this means it is set eg no match for digits
+     --------                   ; reduce z by 8 A
+     $m++++(-$v+++++)$v         ; set 25 to v
+     (>>[-<]<[>]@m$v-)          ; z sub v
      $m+$z(
-      this means it is set eg no match again for upper case letters
-      -----              reduce z by 5 _
-      (--                check for underscore reduce by 2 ascii a
-      $m++++(-$v+++++)$v set 25 to v
-      (>>[-<]<[>]@m$v-)  z sub v
+      ;this means it is set eg no match again for upper case letters
+      -----                     ; reduce z by 5 _
+      (--                       ; check for underscore reduce by 2 ascii a
+      $m++++(-$v+++++)$v        ; set 25 to v
+      (>>[-<]<[>]@m$v-)         ; z sub v
       $m+$z(
-      this means it is set eg no match against lower case letters
-      $m-                reset m
-      $z(-)              reset z
+      ; this means it is set eg no match against lower case letters
+      $m-                       ; reset m
+      $z(-)                     ; reset z
   ))))
-  if m is set then we matched /\w|_/i
+  ;if m is set then we matched /\w|_/i
   $m(-
       $e(-)+ set e
       $h(-$w+) move h to w
@@ -604,12 +631,12 @@ $e(-$t+) copy e to t
 $w+ set working to 1
 $t($w-
 
-implementations with more than 8 bits might have large number
-when dealing with long variable names but we do a mod 251
+;implementations with more than 8 bits might have large number
+;when dealing with long variable names but we do a mod 251
 $8(
   $i(-$a+) move i to a
   $8(-$i+)  copy 251 to i
-  8|h|i|t|w|a
+  ;8|h|i|t|w|a
   $h(-$i-
      [>-]>
        (-@t
