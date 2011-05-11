@@ -53,17 +53,22 @@ $(INTERPRETER).test-bin.tmp: ebf-bin.bf tools/test.sh
 compile: ebft.bf
 
 ebft.bf: ebf.bf ebf.ebf
-	$(INTERPRETER) ${INTREPRETER_FLAGS} ebf.bf < ebf.ebf | tee  ebft.tmp | tools/apply_code.pl object-design/$(LOADING) && \
+	cat ebf.ebf | $(INTERPRETER) ${INTREPRETER_FLAGS} ebf.bf | tee  ebft.tmp | tools/apply_code.pl object-design/$(LOADING) && \
 	tools/ebf_error.pl ebft.tmp && \
-	mv ebft.tmp ebft.bf && \
-	diff -wu ebf.bf ebft.bf || false
+	mv ebft.tmp ebft.bf && ( diff -wu ebf.bf ebft.bf || true ) 
+
+fast: ebf.bf ebf.ebf
+	tools/strip_ebf.pl ebf.ebf | $(INTERPRETER) ${INTREPRETER_FLAGS} ebf.bf | tee  ebft.tmp | tools/apply_code.pl object-design/$(LOADING) && \
+	tools/ebf_error.pl ebft.tmp && \
+	mv ebft.tmp ebft.bf 
+
 
 ebf    : ebf.bf
 	$(JITBF) --fuzzy -p ebf.bf > ebf.c
 	$(CC) ebf.c -o ebf
 
 ebf.bf: ebf-bin-bootstrap.bf
-	$(INTERPRETER) $(BOOTSTRAP_FLAGS) ebf-bin-bootstrap.bf < ebf.ebf | tee  ebf.tmp | tools/apply_code.pl object-design/$(LOADING) && \
+	cat ebf.ebf | $(INTERPRETER) $(BOOTSTRAP_FLAGS) ebf-bin-bootstrap.bf | tee  ebf.tmp | tools/apply_code.pl object-design/$(LOADING) && \
 	tools/ebf_error.pl ebf.tmp && \
 	mv ebf.tmp ebf.bf || false
 
@@ -109,14 +114,14 @@ ebf-bin-bootstrap.bf:
 		wget -nv 'http://ebf-compiler.googlecode.com/svn/tags/ebfv1.2.0/ebf.ebf' -O ebf-1.2.0.ebf && \
 		echo "Downloading previous source ebfv1.3.0 to compile it with v1.2.0" && \
 		wget -nv 'http://ebf-compiler.googlecode.com/svn/tags/ebfv1.3.0/ebf.ebf' -O ebf-1.3.0.ebf && \
-		echo "tools/strip_ebf1-1.3.0.pl ebf-1.1.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-handcompiled.bf > ebf-bin-1.1.0.bf" && \
-		tools/strip_ebf1-1.3.0.pl ebf-1.1.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-handcompiled.bf > ebf-bin-1.1.0.bf && \
+		echo "tools/strip_ebf.pl ebf-1.1.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-handcompiled.bf > ebf-bin-1.1.0.bf" && \
+		tools/strip_ebf.pl ebf-1.1.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-handcompiled.bf > ebf-bin-1.1.0.bf && \
 		tools/ebf_error.pl ebf-bin-1.1.0.bf && \
-		echo "tools/strip_ebf1-1.3.0.pl ebf-1.2.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.1.0.bf > ebf-bin-1.2.0.bf" && \
-		tools/strip_ebf1-1.3.0.pl ebf-1.2.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.1.0.bf > ebf-bin-1.2.0.bf && \
+		echo "tools/strip_ebf.pl ebf-1.2.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.1.0.bf > ebf-bin-1.2.0.bf" && \
+		tools/strip_ebf.pl ebf-1.2.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.1.0.bf > ebf-bin-1.2.0.bf && \
 		tools/ebf_error.pl ebf-bin-1.2.0.bf && \
-		echo "tools/strip_ebf1-1.3.0.pl ebf-1.3.0.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.2.0.bf > ebf-bin-1.3.0.bf" && \
-		tools/strip_ebf1-1.3.0.pl ebf-1.3.0.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.2.0.bf > ebf-bin-1.3.0.bf && \
+		echo "tools/strip_ebf.pl ebf-1.3.0.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.2.0.bf > ebf-bin-1.3.0.bf" && \
+		tools/strip_ebf.pl ebf-1.3.0.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.2.0.bf > ebf-bin-1.3.0.bf && \
 		tools/ebf_error.pl ebf-bin-1.3.0.bf && \
 		cp  ebf-bin-1.3.0.bf ebf-bin-bootstrap.bf || false; \
 	fi
