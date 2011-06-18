@@ -143,24 +143,6 @@
 ; expects that the current cell and next cell are empty 
 {print_string
   print_string implementation
-  +[->+]->      ; we're at the beginning of buffer
-  [             ; we have data in buffer
-    [>]         ; move to end. mark it as a
-    :m1:char:sep:quote:chardiv:divisor:modulus:result
-    @sep
-    $sep(-$quote+)              ; copy first byte of buffer to quote
-
-    $char+(-                            ; while buffer not empty
-     (-$sep+$quote-$chardiv+$divisor)   ; copy to sep to many locations, sub with quote for comparison
-      $quote
-      ( 
-     $divisor++++++++++         ; initial guess is 10
-     $chardiv &divmod @chardiv
-
-    ))
-    !result!modulus!divisor!chardiv!quote!sep!char!m1
-  ]
-  ++[--<++]--@M
 }
 
 ; auto alighning bracket. ) is the second of two '(' and ')' where ) pops the stack
@@ -362,7 +344,7 @@
 ; implements macro expansion (&). It will lookup the index value from the macro name
 ; and move to the end of that macro index and create a mark (-1). It will then copy backwards
 ; 0|macrocontents|-1|0|0| => 0|-1|macrocontents|0|0|..(other macroes)...-2|previous content|stnetnocorcam|0|-1
-; then it will crean up so that we have the same structure only with added content in buffer
+; then it will clean up so that we have the same structure only with added content in buffer
 ; -2|0|macrocontents|0|0|0|..(other macroes)...-1|previous content|stnetnocorcam|0...
 {run_macro
 ;   since macro will add to buffer and everything in hash is an intermidiate cache we need to move hash
