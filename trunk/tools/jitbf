@@ -149,6 +149,8 @@ $ver
 --bf
 
 -p, --print        will print out c/perl code and exit.
+--description      Add a description to the printed C-code
+
 -l, --line         with line numbers
 
 --no-fuzzy         do not optimize code segments (join brainfuck commands)
