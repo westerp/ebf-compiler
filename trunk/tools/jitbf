@@ -5,14 +5,14 @@
 #   1. brainfuck optimizer (can print out optimized code)
 #   2. brainfuck to optimized perl or c source code generator
 #   3. a JIT. can run it's generated perl or C (with Inline) nativly
-#   4. the perl part was though of as could eb the start of a debugger, eg.
+#   4. the perl part was though of as could be the start of a debugger, eg.
 #      the code will run a sub between each step and that will allow
 #      inspection, stepping, run to end loop, set input buffer etc.
 #
 # It is really slow at first run with awib (5 minutes). It's not the compiler but the parser.
 # Maybe with smaller code (use of macroes) will it be faster. when it has compiled first time
 # it's quite fast. It runs awib compilation of itself 3 times faster than awibs own compiled
-# binary.
+# binary (but not awibs own compiled c code which the gcc optimizes to be pretty mutch the same.
 #
 # This file is part of ebf-compiler package
 #
@@ -28,8 +28,6 @@
 #
 # You should have received a copy of the GNU General Public License
 
-
-
 use strict;
 use warnings;
 
@@ -37,6 +35,7 @@ use Getopt::Long;
 use Config;
 use Cwd 'abs_path';
 
+#my $time = time();
 my ($progname) = $0 =~ m/.*\/(.*)/;
 my ($predefined_bits) = $progname =~ m/(\d{1,2})/;
 my ($perl) = $progname =~ m/(perl)/;
@@ -65,6 +64,10 @@ my $new_cache = 0;
 my $build_dir = '';
 my $cache_file = '';
 my $eof = undef;
+my $description = "";
+my $usage = "\\n\\nUsage: %1s [INFILES] [-o OUTFILE]\\nWith no infiles it takes input from stdin.\\n" .
+              "Add - as an infile to have stdin in additiion to other files\\n" .
+              "With no outputfile, writes to stdout\\nThis binary is compiled with jitbf http://sylwester.no/jitbf/\\n";
 
 if( $ENV{HOME} ) {
     $build_dir = "$ENV{HOME}/.jitbf/Inline/";
@@ -88,10 +91,14 @@ if( -d $build_dir && @ARGV == 1 && -r "$ARGV[0]" && ! defined $perl && ! defined
             close CACHE;
             $/ = $spare;
         }
-        $filename =~  s/^(.*)\///;
-        $filename =~  s/^(\w+).*$/$1/;
 
+        #$time = time() - $time;
+        #print STDERR "\n$time init\n";
         {
+            $filename =~  s/^(.*)\///;
+            $filename =~  s/^(\w[\w_-]*).*$/$1/;
+            $filename =~  s/-/_/g;
+
             no warnings 'redefine';
             use Inline;
             Inline->bind(C => $ccode, USING => 'ParseRegExp', PRINT_INFO => 0, BUILD_TIMERS => 0, CLEAN_AFTER_BUILD => 0, NAME => $filename, DIRECTORY => $build_dir, AUTONAME => 1);#, DIRECTORY=> $ENV{HOME}.'/.jitbf');
@@ -103,8 +110,9 @@ if( -d $build_dir && @ARGV == 1 && -r "$ARGV[0]" && ! defined $perl && ! defined
 
 GetOptions( 'bits|b=i' => \$bit_size, 'memory|cells|c=i' => \$num_cells,
             'bf|print-brainfuck' => \$print_brainfuck, 'print|p' => \$print,
+            'description=s' => \$description,
             'optimize-level|optimize|o=i{0,1}' => \$optimizer,
-	    'perl' => \$force_perl,
+            'perl' => \$force_perl,
             'stats|s' => \$optimizer_stat, 'debug|d!' => \$debugger,
             'help|h' => \$help, 'fuzzy!' => \$compiler_optimizer,
             'l|line' => \$line_numbers, 'n|new' => \$new_cache, 'e|eof=s' => \$eof  );
@@ -118,9 +126,9 @@ my $ver = '$Id$';
 
 if( $help ) {
     print <<EOF;
-Usage: $progname brainfuck-file.b
+Usage: $progname brainfuck-file.bf
 
-$progname is a Just in time BrainFuck to perl compiler
+$progname is a Just in time BrainFuck to c/perl compiler
 $ver
 
 -b, --bits         bit size for cells. default is unset(dynamic).
@@ -140,7 +148,7 @@ $ver
 --print-brainfuck  will print out optimized brainfuck and exit
 --bf
 
--p, --print        will print out perl code and exit.
+-p, --print        will print out c/perl code and exit.
 -l, --line         with line numbers
 
 --no-fuzzy         do not optimize code segments (join brainfuck commands)
@@ -159,7 +167,11 @@ EOF
 my $filename = @ARGV ? abs_path($ARGV[0]) : '';
 die("$ARGV[0]: Does not exist or is a directory. please check\n") if( $filename && ( -d $filename || ! -r $filename ) );
 $filename =~  s/^(.*)\///;
-$filename =~  s/^(\w+).*$/$1/;
+$filename =~  s/^(\w[\w_-]*).*$/$1/;
+
+if( $description eq '' ) {
+  $description = "$filename - A BrainFuck application compiled with jitbf";
+}
 
 my $bit_mask = ( $bit_size ? (-1&$arch_mask)>>($arch_bits-$bit_size) : 0);
 $eof &= $bit_mask if( defined $eof );
@@ -418,14 +430,26 @@ while( $compiler_optimizer &&  $fruits ) {
         elsif( $code[$i] eq ']' ) {
             if( $unloop == $i ) {
                 if( $code[$i-2] ne '0' ) {
-                    my $t=$i-4;
-                    while( $code[$t] ne '0' ) {
-                    die("no more mr nice guy\n") if( $t == 0 );
-                    $t-=2;
-                    }
-                    while( $t != $i-2 ){
-                    $code[$t] = $code[$t+2];
-                    $t++;
+                    if( $code[$i+2] eq '0' ) {
+                        $code[$i+2] = $code[$i];
+                        $code[$i+3] = $code[$i+1];
+                        $i +=2;
+                    } else {
+                      my $t=$i-4;
+                      while( $code[$t] ne '0' ) {                      
+                        if( $t == 0 ){
+                          for( my $i=0; $i<@code; $i+=2 )
+                          {
+                              print STDERR "$i $code[$i]($code[$i+1])\n";
+                          }
+                          die("no more mr nice guy\n");
+                        }
+                        $t-=2;
+                      }
+                      while( $t != $i-2 ){
+                        $code[$t] = $code[$t+2];
+                        $t++;
+                      }
                     }
                 }
                 $code[$i-2] = 'Z';
@@ -449,9 +473,9 @@ while( $compiler_optimizer &&  $fruits ) {
             $movement_balance = 0;
             $zero_pointer_balance=0;
         }
-        elsif( $code[$i] =~ m/[\.,]/i )
+        elsif( $code[$i] =~ m/[\.,]/i || $code[$i] eq 'IF{' && $code[$i-2] !~ /(?:\+|MUL)/ )
         {
-	        # do not optimize when size effects
+            # do not optimize when size effects or loop that does not imidiatly follow an increment (because then we will need MUL to take several arguments)
             $side_effects = 1 ;
         }
     }
@@ -497,10 +521,86 @@ sub create_c_code
     my $bs = $bit_size == 0 ? $arch_bits : $bit_size;
     my $dtype = ( $bs <= 8 ? 'uint8_t' : ( $bs <= 16  ? 'uint16_t' : ($bs <= 32 ? 'uint32_t' : 'uint64_t' )));
     my $bs_standard = ( $bs == 8 || $bs == 16 || $bs == 32 || $bs == 64  ? 1 : 0 );
-    $print_header = "#include <stdio.h>\n\n";
-    $print_footer="int main(void){\n  run_c();\n  return 0;\n}\n\n";
+    $print_header = "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n";
+
+    # todo. allow parameters. al arhuments are taken as input files 
+    # except if it's -o, then the argument that follows will be a file written
+    $description =~ s/\n/\\n/g;
+    $print_footer=<<EOF;
+  int main(int argc, char* argv[]) {
+  int error = 0;
+  int i = 0;
+  if( !( fhs = malloc(sizeof(FILE*)*argc+1) ) ){
+      fprintf(stderr, "Malloc fail\\n", argv[0]);
+      exit(1);
+  }
+  for(i=1; i< argc; i++) {
+    if( ! strcmp( argv[i], "--help" ) ){
+      fprintf(stderr, "$description\\n$usage", argv[0]);
+      error = 1;
+      break;
+    }
+    else if( !  strcmp( argv[i], "-" ) ){
+        fhs[i-1] = stdin;
+    }
+    else if( !  strcmp( argv[i], "-o" ) && i+1 < argc ){
+        if( !( stdout = fopen(argv[i+1], "w") ) ){
+          fprintf(stderr, "Failed to open outputfile %s!\\n", argv[i+1]);          
+          error = 1;
+        }
+        break;
+    }
+    else {
+        if( !( fhs[i-1] = fopen(argv[i], "r") ) ){
+          fprintf(stderr, "Failed to open %s!\\n", argv[i]);
+          error = 1;
+          break;
+        }
+    }
+    num_files++;
+  }
+  if( num_files )
+    stdin = fhs[0];
+
+  if( ! error )
+    run_c();
+
+  for(i=0; i<num_files; i++)
+        fclose(fhs[i]);
+  free(fhs);
+  return error;
+}
+EOF
+
+    my $sub = <<EOF;
+#include <stdint.h>
+$dtype buf[$num_cells];
+int num_files=0;
+int cur_file=0;
+FILE** fhs = 0;
+
+int readc(){
+      int tmp = -1;
+      while( (tmp = getc( stdin )) < 0 )
+      {
+        if( cur_file+1 >= num_files )
+          return -1;
+        cur_file++;
+        stdin = fhs[cur_file];
+      }
+      return tmp;
+}
+
+void printc(int c){
+  putc(c, stdout);
+}
+
+void run_c() {
+  $dtype *p=buf;
+  int c;
+EOF
+
     my $t = "  ";
-    my $sub = "#include <stdint.h>\n\n$dtype buf[$num_cells];\nvoid run_c() {\n  $dtype *p=buf;\n  int c;\n";
 
     for(my $i=0; $i<@code; $i+=2 )
     {
@@ -529,14 +629,14 @@ sub create_c_code
             my $eof_code = (  defined $eof  ?  "else p[$offset]=$eof;" : '' );
             my $inp = '';
             for( 1..$param ) {
-                $inp .= 'c=getchar();';
+                $inp .= 'c=readc();';
             }
             $sub .= $t."${inp}if(c>=0)p[$offset]=c;$eof_code"."\n";
         }
         elsif ( $code[$i] eq '.' ) {
             my $inp = '';
             for( 1..$param ) {
-                $inp .= "putchar(p[$offset]);";
+                $inp .= "printc(p[$offset]);";
             }
             $sub .= $t.$inp."\n";
         }
@@ -695,7 +795,15 @@ if( ! $debugger && ! $force_perl) {
         }
     }
     print_code($ccode);
+
+    #$time = time() - $time;
+    #print STDERR "\n$time init\n";
+
     {
+        $filename =~  s/^(.*)\///;
+        $filename =~  s/^(\w[\w_-]*).*$/$1/;
+        $filename =~  s/-/_/g;
+
         no warnings 'redefine';
         use Inline;
         Inline->bind(C => $ccode, USING => 'ParseRegExp', PRINT_INFO => 0, BUILD_TIMERS => 0, CLEAN_AFTER_BUILD => 0, NAME => $filename, DIRECTORY => $build_dir, AUTONAME => 1);#, DIRECTORY=> $ENV{HOME}.'/.jitbf');
@@ -708,7 +816,7 @@ else
   &run_perl;
 }
 if( $debugger || $optimizer_stat )
-{
+{    
     print "\n";
     my $cnt = 0;
     my $olddata = '';
