@@ -1,0 +1,112 @@
+; $Id$
+; 
+; This is an implementation of a binary-quine generator
+; eg. it takes a brainfuck program as input and
+; outputs a similar binary which dumps its own source on exit
+;
+; ebf-compiler is free software: you can redistribute it and/or modify
+; it under the terms of the GNU General Public License as published by
+; the Free Software Foundation, either version 3 of the License, or
+; (at your option) any later version.
+;
+; ebf-compiler is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; GNU General Public License for more details.
+;
+; You should have received a copy of the GNU General Public License
+;
+
+; this is used by bf1.pl to label the data cells during debuging
+ML|eom|cr_rd|sym_rd|cr_pr|sym_pr|cr_min|sym_min|cr_cl|sym_cl|cr_op|sym_op|cr_lt|sym_lt|cr_gt|sym_gt|cr_plu|sym_plu|zero|cue|sourcen|source2|source|right|plus|destination|lcue
+
+; macroes used
+{seek1down +[->+] @lcue}
+{copy2left (-<+) }
+{print_minus +++++(->+++++++++)>.}
+{read $source2+$sourcen,[+[->-]]>[-@source2>]$sourcen}
+
+data is reversed
+:sym_rd:cr_pr:sym_pr:cr_min:sym_min:cr_cl:sym_cl:cr_op:sym_op:cr_lt:sym_lt:cr_gt
+:sym_gt:cr_plu:sym_plu:zero:cue:sourcen:source2:source:right:plus:destination:lcue
+
+{special_marker +++++>+>+++++>+++++>+>+>+>+>+>+>+>+>+>+>+>+>+>+>+>+>+>}
+{binary_quine  
+; this is basically the reverse of the data created when binary-quine is
+; created with all the 'special' quine-generator stuff enabled
+; the beginning (the code that creates ->--*17> is moved to 
+; special marker because this needs to be added first while
+; the quine-data needs to be pu AFTER the external program data
+
+>+++>+++>+++++>++>>++++>+++++>+>>>+++>+++++>+++++>++>++>++++>++++>+>>>>>>+++
+>+++++>+>>>>>>>>>>++>++++>+>++++++>++>++>++>++>>+++>+++++>++>>++++>+>>>>>>>>
+>>+++>+++++>+>>>>>>+>>>>>>>>++>++>++++>+>+++++>+++++>+>+++++>++++++>++++++>+
++++++>++++++>+>>+++>+++++>+++>+++++>++>++>++++++>++>>+>+>+>++++>++>++>++>>+>
++>++++++>+++>+++++>+>>++>++++>++>+++>+++++>+>>++>++++>+>+>+>>++++>++>+++>+++
+++>+>+>+>>+>+>>++>++>++>++>++>++++>++>>>+++>+++++>+>+>>+>+>+>+++++>+>+>+>>>+
+>+>>>+>+>>+>+>>+>+>>++>++>++>++>++>++>++>++>++>++>++>++>++>++>++>++>++++>+>+
+>+++++>+++++>+>+>+>+>+++++>+++++>+>+>>+>+>>>>+>+>+>+>>+>+>+++++>+++>++>++>++
+++>>++>++>+++>+++++>+++>+++++>+>+>+++>+>++++>+>+>+++>+>+>++++>>+++>++>++>+++
++>++>+++>++>++++>++>++++>+>+>+++>+>++++>+>+>+++>+>+>++++>++>++++++>++>+++>++
++++>++>++>++++>++>+++>++>++++>>++>++>++++> }
+
+$cue-$sourcen
+
+&special_marker
+@sourcen
+; "+"=>0,">"=>1,"<"=>2,"["=>3,"]"=>4,"-"=>5,"."=>6,","=>7
+&read (
+  $source2*6+(-$sourcen*7-)+$sourcen-
+  (-
+    (-
+      (-
+        ($source2++(-$sourcen----)+$sourcen--
+          (--
+            ($source2+++++(-$sourcen-----)+$sourcen+
+              (--
+                ((-)$source2-)
+                $source2(- endwh $sourcen++++   >@sourcen)
+              ) $source2(- while $sourcen+++    >@sourcen)
+            )   $source2(- right $sourcen+      >@sourcen)
+          )     $source2(- left  $sourcen++     >@sourcen)
+        )       $source2(- point $sourcen++++++ >@sourcen)
+      )         $source2(- minus $sourcen+++++  >@sourcen)
+    )           $source2(- comma $sourcen+++++++>@sourcen)
+  )             $source2(- plus  $source2        @sourcen)
+  &read
+)
+
+&binary_quine
+
+@right
+$plus &print_minus ; prints - stores in destination
+$plus+++(-$right++++++)       ; adds 18 
+$destination(-$plus+$right+)  ; copies - to plus and right 
+$plus--$right-....
+
+; this part creates the code that creates the data structure
+$source
++(- 
+      ; copy source to destination while printing out a + 
+      (- $plus. $destination+)
+      $destination+
+      $right. &copy2left
+      $plus   &copy2left
+      $source2+@source
+ )
+
+@sym_plu
+$zero(-$sym_gt+$sym_lt+)
+$cue++(-$sym_plu+$sym_op++$sym_cl++$sym_min+$sym_pr+$sym_rd+)
+$sym_plu--$sym_lt--$sym_op+$sym_cl+++$sym_pr+$sym_rd-[>>]
++>@cue
+
+$sourcen(-
+
+  (-
+    $zero[<]@zero $cr_plu (@zero) + @zero(@cr_plu)
+    $cue[>]@cue $sourcen
+  )
+  $zero[<]@zero $cr_plu (@zero) >.> (-@cr_plu)
+  $cue[>]+>@cue
+)

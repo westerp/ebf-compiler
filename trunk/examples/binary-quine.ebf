@@ -1,0 +1,87 @@
+; $Id$
+; 
+; This is an implementation of a binary-quine (example file)
+; when compiled and run it creates its own object code without comments
+;
+; ebf-compiler is free software: you can redistribute it and/or modify
+; it under the terms of the GNU General Public License as published by
+; the Free Software Foundation, either version 3 of the License, or
+; (at your option) any later version.
+;
+; ebf-compiler is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; GNU General Public License for more details.
+;
+; You should have received a copy of the GNU General Public License
+;
+
+
+; quine.ebf
+; a generic binary-quine
+; eg. it create its own object code
+; data structure -1|abc.....|-1
+; where ... is 0-7 for each brainfuck code
+
+ML|lcue|destination|plus|right|source|source2|sourcen|cue|zero|sym_plu|cr_plu|sym_gt|cr_gt|sym_lt|cr_lt|sym_op|cr_op|sym_cl|cr_cl|sym_min|cr_min|sym_pr
+
+
+{seek1down +[-<+] @lcue}
+{copy2right (->+) }
+{print_minus +++++(->+++++++++)>.}
+{data ->>>> PLACEHOLDER -
+; quine-generator uncomment this
+>--@zero $eom
+}
+
+we are at the last char
+:lcue:destination:plus:right:source:source2:sourcen:cue:zero:sym_plu:cr_plu:sym_gt:cr_gt:sym_lt:cr_lt:sym_op:cr_op:sym_cl:cr_cl:sym_min:cr_min:sym_pr:cr_pr:sym_rd:cr_rd:eom
+
+; print out data creation code
+&data
+
+@cue
+; seek for -1-2. 
+; used in quine-generator
+ +[[-<+]->++[--<<]] @zero
+
+
+#
+$sym_plu&print_minus ; prints -
+$sourcen &seek1down
+$destination*9+(-$plus*5+$right*7+)$plus--$right-....
+; this part creates the code that creates the data structure
+; so far not sure how it should represent but a good test 
+; would be to create some data and try to see if it recreates the same code
+$source
++(- 
+      ; copy source to destination while printing out a + 
+      (- $plus. $destination+)
+      $destination+
+      $right. &copy2right
+      $plus   &copy2right
+      $source2+@source
+ )
+#
+
+@sym_plu
+$zero(-$sym_gt+$sym_lt+)
+$cue++(-$sym_plu+$cr_gt-$sym_op++$sym_cl++$sym_min+$sym_pr+
+; quine-generator quine needs ,. commented out for normal operations
+$sym_rd+
+)
+$sym_plu--$sym_lt--$sym_op+$sym_cl+++$sym_pr+
+; quine-generator need ,.
+$sym_rd-
+[<<]
+
++<@cue
+$sourcen(-
+
+  (-
+  >>[>]@zero $cr_plu (@zero) + @zero(@cr_plu)
+    $cue[<]<@sourcen
+  )
+  >>[>]@zero $cr_plu (@zero) <.< (-@cr_plu)
+  $cue[<]+<<@sourcen
+)
