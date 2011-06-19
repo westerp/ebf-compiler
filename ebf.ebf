@@ -16,8 +16,8 @@
 ; You should have received a copy of the GNU General Public License
 ; ]
 
-;ML|crumble|variable|macro|zero|global|global_macro|8bit|hash|input|tmp|working|adding|position|error|nooverflow|macro_number|flag|zero|macro_area|input_area|tmp|wrk
-;PTR=1285|3
+ML|crumble|variable|macro|zero|global|global_macro|input|tmp|working|adding|position|error|nooverflow|macro_number|flag|zero|macro_area|I|buf|fun|inp|sub|more|test|error|hash|copy|source|htmp|33|
+PTR=1285|3
 
 ; #########################################################################################
 ; MACRO DEFINITIONS
@@ -25,7 +25,8 @@
 ; stack_error prints out ERROR if stack set
 ; It is used in the end of the application
 {print_if_stack_error
-    $z+[-<+]<
+    ++[--<++]@M
+    +[-<+]<
     [                                   ; need to check stack for uneven brackets
         >>+++++++++[->++++++++<]>---    ; prints ERROR using previous block
         .+++++++++++++..---.+++.        ; and both previous and cuurent block is zero after
@@ -35,20 +36,22 @@
 
 ; macro for implementing the > which increases the pointer or
 ; resets overflow. for normal operation overflow is always set
-{go_up $i.$a+$p+++[$a-]$w[@a-$o(-)$p-$w]$p-- }
+{go_up &buf2var $a+$p+++[$a-]$w[@a-$o(-)$p-$w]$p-- &fake_buffer}
 
 ; macro for implementing the < which decreases the pointer or
 ; resets overflow. for normal operation overflow is always set
-{go_down $i. $a+$p[-$a-]$w[@a-$o(-)$w] }
+{go_down &buf2var $a+$p[-$a-]$w[@a-$o(-)$w] &fake_buffer}
 
 ; implements removal of comments. Because of the newline we don't reuse this
-{rm_comment (,----------)++++++++++.(-) }                    ; purge comments
+{rm_comment $inp(,----------)++++++++++.(-) }                    ; purge comments
 
 ; auto alighning bracket. ( is the one of two '(' and ')' where ( sets a stack
 ; to the position it is nowe and print out a  [.
 {open
+    &buf2var
+    $i+                           ; set i
     $o((-)
-    $t+++++++(-$i+++++++)$i++.(-) ; convert "(" to "[" by adding 51
+    $t++++++++++(-$i+++++++++)$i.(-) ; create a "[", print and delete
     $a-$w+[-<+]-@d                ; seek to -1
     $b @r(@d) +                   ; mark
     @d(@r)+[->+]-@a               ; first zero, then first -1
@@ -58,12 +61,16 @@
         @d(@r)+[->+]-@a           ; first zero, then first -1
         )
     $a+$w(-$p+)
-    )+$i(.(-)$e+)
+    )+$i(
+      $t++++++(-$i+++++++)$i---.(-); create a "("
+      $e+)
+    &fake_buffer
     open brackets end
 }
 
-{macrun
+{macstart
   push position on stack
+    &buf2var
     $a-$w+[-<+]-@d                ; seek to -1
     $r @r(@d) +                   ; mark
     @d(@r)+[->+]-@a               ; first zero, then first -1
@@ -73,27 +80,38 @@
         @d(@r)+[->+]-@a           ; first zero, then first -1
         )
     $a+$w(-$p+)
-    macrun end
+    &fake_buffer
+    macstart end
 }
 
 {macrend
   remove position on stack
-    $a-$w+[-<+]-@d                ; seek to -1
-    $r @r(@d) $d(-)               ; delete
-    @r$d(@r)+[->+]@a              ; move back
+    $I[<]<+[-<+]-@d                 ; seek to -1
+    $r @r(@d) $d(-)                 ; delete
+    @r$d(@r)+[->+]-[>]@buf          ; move back
   macrend end
 }
 
 {param
   move to position in stack
   with possible numeric operand for offset indication
-  &I
-  $v(-$m+$z+)
-  $v++++++(-$m--------)
-  $c+++++++++
-  (>>[-<]<[>]@v$c-)
-  $v+$m((-)$v-$z(-$h+))
-  $v($z.$v+++++(-$z--------))    ; print out parameter, reduce to number
+#
+  $buf+$I+[-$buf-@function]>[-@buf$I-$buf$inp]
+  $buf(-$function+$inp+)
+  
+  $tmp++++++(-$inp--------) ; reduce test by 48 ascii 0
+  $wrk+++++++++
+  (<<[->]>[<]@tmp$wrk-)
+  $tmp+
+  $inp((-) $tmp- $function(-$buf+))
+  $tmp($function.$tmp+++++(-$function--------))
+
+  $function(  ;-+ cancelled
+              +[--<++]--@M
+              $z+
+              +[->+]-[>]@buf )
+
+  &buf2var
   $w-$t+[-<+]--@d                 ; seek to -1 set to -2
   $r( (@d) -                      ; delete set -1
   $d                              ; tmp|-1|x....
@@ -107,6 +125,7 @@
   $i[ $z(-$i+$a+) $t-]
   $w(@t-)$t+
   &posmove
+  &fake_buffer
 }
 
 
@@ -114,7 +133,9 @@
 ; multiply the next operation by parameter count
 ; only supports cell size increase
 {multiply
-  $t(-
+  TODO reimplement in buffer
+  &buf2var
+  $t+(-
     &I    ; read input into v
     $v.(-$m+$z+$i+)               copy to m z and i
     $v++++++++(-$m------$z------) reduce by 48
@@ -137,18 +158,24 @@
     $i(-)
     $t+
   )
+  &fake_buffer
 }
 
 ; print_string takes a string parameter double quotes
 ; expects that the current cell and next cell are empty 
 {print_string
-  print_string implementation
+  please implement print_string
+}
+
+{store_string
+  please implement store_string
 }
 
 ; auto alighning bracket. ) is the second of two '(' and ')' where ) pops the stack
 ; and creates the command to move to that location before changing ) to a ]
 {close
-    $o((-)
+    &buf2var
+    $i+$o((-)
     $i(-)                we need i
     $w-$t+[-<+]--        move backwards to stack ; -1 set to -2
     <<<[<<]->>           move along stack area until zero; set it to -1
@@ -172,7 +199,11 @@
     $t]>[@t$e+++++$t->]         set error flag if t is not set
     $w+++++++(-$t+++++++++++++)$t++. print close ; eg. "]"
     (-)                         blank out w
-    )+$i(.(-)$e+)               set error if e set
+    )+$i(
+         $t++++++(-$i+++++++)$i--.(-)
+         $e+
+        )               set error if i set
+    &fake_buffer
     close bracket end
 }
 
@@ -278,7 +309,7 @@
 }
 
 ; implements macro definition ({). It has an macro index that gets incremented
-; for each one and that is tsored in the macro names index. it is just appended
+; for each one and that is stored in the macro names index. it is just appended
 ; to the end where the next macro (or input buffer) should be. It moves the
 ; input bufer accordingly. It is not allowed to define macroes inside macroes and
 ; therefor you will never have input in buffer when in this part of the code.
@@ -286,23 +317,24 @@
     &array_open                  open path to array index like input
 
     error checking code for double assignment
-    &array_element$m((-)            move to variable check if non zero
-    &array_back $e+ &array_element)          when non zero set e ; ERROR
-    &array_back                  back to z
+    &array_element                            move to variable
+    $m((-) &array_back $e+ &array_element )   when non zero set e ; ERROR
 
-    $G+(- $t+ &array_element$m+&array_back ) increment G and copy g to t and n
-    &array_element&array_close                clear trail
+    &array_back                              back to z
+    $G+(- $t+ &array_element $m+ &array_back ) increment G and copy g to t and m
+    &array_element &array_close               clear trail
+
     $t(- $G+)           restore new G
 
     there is always a ~1 where input starts and its to the right of where macro should have its first char
-    lets copy h there
-    $h(- $t->+[->+]-<++[-<+]@t )
-    $t+[->+]
+    lets copy buf there
+    +[->+]@I      move to I and remove marker
+    $buf(-$M+)$I  copy first buffer 
 ;    |B|F|Z|test|0|0|test2|0|0|0|~1
 ;    $M>>[[>]>>>]
 ;    >(-)                remove marker
     @t to make this easy we assume we are at t
-    $t+$i[$t-]>(@t-$i,)
+;    $t+$i[$t-]>(@t-$i,)
     $t+$i(
         $t+++++++(-$i-------)+$i---          reduce by 59;  (;)
         (>+++++++(-<--------)+<              reduce by 64;  ({)
@@ -312,22 +344,24 @@
                 $i++++>@i                    inc 4 == 125
                 $w+
             )$t (-                           in close macro ;eg }
-                $i(-)$t+
+                $t+
 ;                h=char|i=0|t=1|w=0
-                $h[>]
+                $i<[>]
                 >(-)
                 >(@i no char in macro error
-                  [--<++]--@M               go back to ~2
-                  $e++[->+]@t
+                  [--<++]--@M                 go back to ~2 while setting i to ~1
+                  $e++[->+]@t                 set e and go back to i and say its t
                 )
             )
-            )$t(-                            in open macro which
-                $i(-)                        is an error since
-                -<++[--<++]--@M              a macro definition cannot
-                $e+++$M>>[[>]>>>]@i            contain another macro definition
+            )$t(                              in open macro which is an error since
+                +[--<++]--@M                  a macro definition cannot
+                $e+++$M>>[[>]>>>]@i           contain another macro definition
             )
         )$t(-                   in comment ignore everything until cr; (;)
-            $i+(,----------)    read until cr
+            #$i+<----------
+            [++++++++++>-]
+            >[-@t]
+            $i+(,----------)    read until cr ; TODO: Check for eof-s
             ++++++++++
             >@i
             $w+
@@ -336,7 +370,7 @@
             +[-$t-]$w[@t-$w]    check eof
             $t+                 set t for next run
         )
-    )>>>>                       set new buffer marker
+    )>>>>                        set new buffer marker
     +[--<++]--@M                go back to ~2
     end macro open tag
 }
@@ -347,34 +381,6 @@
 ; then it will clean up so that we have the same structure only with added content in buffer
 ; -2|0|macrocontents|0|0|0|..(other macroes)...-1|previous content|stnetnocorcam|0...
 {run_macro
-;   since macro will add to buffer and everything in hash is an intermidiate cache we need to move hash
-;   to the buffer so it does not get processed first
-    $h(
-        move position to error
-        $p(-$e+)
-        $i++++++++                            set 8 in the cell next to data
-        <&divmod@h                            divids input with 8
-;        after h=0 i=any t=n%d w=n/d
-;        this assumes t w and a and e are 0
-        $i(-)->+[->+]-- ;set I to ~2
-        [>]>-           ;set first byte to the right of input to ~1
-        <+[-<+]-@i
-        $t(
-            [->+]-      ;reduce by 1 and move to the byte after input
-            <+          ;increase 1s
-            +[-<+]-@i   ;back to i
-         )
-         $i+$t-
-        $w(
-            [->+]-      ;reduce by 1 and move to the byte after input
-            <++++++++   ;increase 8s
-            +[-<+]-@t   ;back to t
-         )
-         +[->+]++       ;move to and set the byte after input to 2 eg end of macro
-         ++[--<++]-     ;reset I to ~1
-         <+[-<+]@t      ;reset t to 0
-         $e(-$p+)       ;restore position
-    )
     $e+
 
     &array_open                 ; open path to array index like input
@@ -391,9 +397,9 @@
     $I >[[>]>>]<<->>>                       ; set first zero to 255
     [[>]>>>]                                ; move to last element
     +>[<-
-        >-[>]>-<<[<]                        ; set next byte to input to 255.. we now have M=255|......|0|macrocontents|255|0|0|......|contentstart=254|.....|0|255.
+        >-[>]++>>-<<[<]                     ; set next byte to input to 255.. we now have M=255|......|0|macrocontents|255|0|0|......|contentstart=254|.....|0|255.
     ]<[-
-        >-->>-<<<<
+        >-->>-<<<<  ; redundant?
     ]
     +[-<+]-
     <[
@@ -406,26 +412,18 @@
     +[->+]-        goto start of input
     [>]+           set it to 1 eg start of macro
     ++[--<++]--@M  go back to M
-
     do macro end
 }
 
 ; read from left char or use read buffer function
-{i
-        $h(-$v+)
-        $m+$v[$m-]$z
-        (@m-
-        &I
-        )
-
-}
+{i is depricated &I }
 
 ; read from buffer. If buffer is empty read from stdin. does not check for EOF
 ; it seeks to -1, change it to -2. Then moves to the left until a empty cell is
 ; reached. This is  then marked with -1 and th eprevious cell will be copied back
 ; to the main variable area using -1 marks. removes the -1 and restores the -2 to -1
 ; before returning.
-{I
+{I  depricated please reimplement in buffer area
         read input to v and output
         $t->+[->+]-->                       set 255 to t then move to first 255 on the right set to 254 move right
         [[>]                                move right until 0 to the right of data
@@ -452,6 +450,7 @@
         $m+$v+[-$m-]$z                      convert ~1 to 0
         [@m-$z]
 }
+
 
 ; Often used macroes and because of speed moved
 ; closer to the buffer.
@@ -480,6 +479,20 @@
 ; this does the divmod. compiler is fuzzy after so caller must fix position to calling
 {divmod[->-[>+>>]>[+[-<+>]>+>>]<<<<<]}
 
+{err_move2buf
+  copy error flag to error
+  $e[ +[->+]-[>]@buf $error+ $I[<]]
+  +[->+]-[>]@buf 
+}
+
+; functions without parameters that work on variables need this in beginning of function
+{buf2var ++[--<++]--@M}
+
+; functions without parameters that work on variables need this in end of function
+{fake_buffer
+  $a+ @add
+}
+
 ; End macro definitions
 ; ###########################################################################
 ; ############################################################################
@@ -500,9 +513,6 @@ end array structure
 :g global variable index
 :G global macro index
 
-:8 zero if 8 bit
-:h hash
-
 :i input
 :t temporary must be next to w and i
 :w working must be between t and a
@@ -513,10 +523,17 @@ end array structure
 :Z zero
 
 macros area
-:M Macro area
+:M Macro area ; -2
 
-input area with bytes written from ne or more macros
-:I Input area
+input area with bytes written from one or more macros
+:I Input area ; -1
+:buf
+:function indicate function with argument to run
+:inp input/buffer
+:tmp temporary must be next to w and i
+:wrk working must be between t and a
+:add adding aide must be next to w
+:error
 
 >>>++                                               ; 2 stacks of 256 elements
 (-<++++(-<++++++++))<<-                             ; multiplied by 32 and then reduced by 1
@@ -527,146 +544,186 @@ input area with bytes written from ne or more macros
 >>>+++                                              ; number of variables in array
 (-<++++(-<++++++++))<<                              ; multiplied by 32
 [->>>>>>>[>>>>>>>>]+[<<<<<<<<]>]                    ; multiplied by 8 cells = 760 (3 elements)
->>>>>>>[->>>>>>>>]                                  ; goto 776
+>>>>>>>[->>>>>>>>]                                      ; goto 776
 @z ; indicates that we are on z
-;$h++++++++(-$8(-$G++)$G+(-$8+))+                     ; stores 255 in 8
-$h++++++(-$G++++++(-$8+++++++))$8-                  ; stores 251 in 8
-$o+$M-->>>-
-$v ,(                                               ; outer loop. EOF=0
 
-(- $t+ $w+)                                         ; pour $i to $w and $t
-$t(- $i+)                                           ; pour $t to $i
-+                                                   ; i=I|t=1|w=I|p=x
+$o+$M-->>>@I+
+$buf,+[-<-]<[-@I<]                                      ; takes care of EOF=-1 on first char
+$I-$buf(                                                ; outer loop.
+
+(- $inp+ $wrk+)                                         ; pour $i to $w and $t
+$tmp+                                                       ; i=I|t=1|w=I|p=x
 ; switch
-$w-                                                 ; reduce $w by 1 (start of macro expanded)
-  (-                                                ; no, reduce by 1 (end of macro expanded)
-   (-$a+++(- $w ----------)$w                       ; reduce $w with -1-3*10=33(!)
-    (---                                            ; no, reduce $w with 3($)
-     (--                                            ; no, reduce $w with 2 (&)
-      (--                                           ; no  reduce $w with 2 "("
-       (-                                           ; no  reduce $w with 1 ")"
-        (-                                          ; no, reduce $w with 1 "*"
-         ( $a++++(- $w---- ) $w                     ; no, reduce $w with 16(:)
-          ( -                                       ; no, reduce by 1 (;)
-           ( -                                      ; no, reuce by 1 (<)
-            ( --                                    ; no, reuce by 2 (>)
-             ( --                                   ; no, reduce by 2 (@)
-              ( $a+++(- $w----------) $w            ; no, reduce by 30 (^)
-               ( $a+++(- $w----------) $w+          ; no, reduce by 29 ({)
-                (-                                  ; no, reduce by 1 (|)
-                 ((-) $i . $i(-) $t- )              ; reset $t and $w
-                 $t (- $i.(-) &print_string   )     ; in |. create code that prints string
-                )$t (- macro      $i+++.(-)+  )     ; in {, output ~, set 1 in i
-               ) $t (- $i.(-) &param          )     ; in ^, move to call position
-              )  $t (- at         $i.(-)++    )     ; in @, outpuy @, set 2 in i
-             )   $t (- &go_up     $i(-)       )     ; run go_right since > adjusts pos
-            )    $t (- &go_down   $i(-)       )     ; run go_left since < adjusts pos
-           )     $t (  &rm_comment$i(-)       )     ; in ; removes comment
-          )      $t (- set        $i.(-)+++   )     ; in :
-         )       $t (  $i.(-) &multiply       )     ; in *
-        )        $t (- &close     $i(-)       )     ; in ")"
-       )         $t (- &open      $i(-)       )     ; in "("
-      )          $t (- replace    $i.(-)++++  )     ; in &
-     )           $t (- varmove    $i.(-)+++++ )     ; move to a ($) (t is 1)
-    )            $t (- delete     $i.(-)++++++)     ; !
-   )             $t (- &macrend   $i--        )     ; end of macro
-  )              $t (- &macrun    $i-         )     ; macro start
 
-$i( if i is set
-- reduce i
- $m+(-
-    &I                          ; read first variable char
-    $v(-$c+$z+)                 ; zerocopy v to c and z
-    $m++++++(-$z--------)       ; reduce z by 48 ascii 0
-    $v+++++++++                 ; set 9 to v
-    (>>[-<]<[>]@m$v-)           ; z sub v
-    $m+$z(                      ; set m goto v check set
+$wrk-                                                   ; reduce $w by 1 (start of macro expanded)
+  (-                                                    ; no, reduce by 1 (end of macro expanded)
+   (-$add+++(- $wrk ----------)$wrk                     ; reduce $w with -1-3*10=33(!)
+    (---                                                ; no, reduce $w with 3($)
+     (--                                                ; no, reduce $w with 2 (&)
+      (--                                               ; no  reduce $w with 2 "("
+       (-                                               ; no  reduce $w with 1 ")"
+        (-                                              ; no, reduce $w with 1 "*"
+         ( $add++++(- $wrk---- ) $wrk                   ; no, reduce $w with 16(:)
+          ( -                                           ; no, reduce by 1 (;)
+           ( -                                          ; no, reuce by 1 (<)
+            ( --                                        ; no, reuce by 2 (>)
+             ( --                                       ; no, reduce by 2 (@)
+              ( $add+++(- $wrk----------) $wrk          ; no, reduce by 30 (^)
+               ( $add+++(- $wrk----------) $wrk+        ; no, reduce by 29 ({)
+                (-                                      ; no, reduce by 1 (|)
+                 (  (-) $inp .(-)  $tmp- )                ; reset $wrk and $tmp
+                 $tmp (- $inp.(-) &print_string   )     ; in |. create code that prints string
+                )$tmp (- macro $inp+++$function+  )     ; in {, output ~, set 1 in i
+               ) $tmp (- $inp.(-)  &param         )     ; in ^, move to call position
+              )  $tmp (- at      $function+++     )     ; in @, outpuy @, set 2 in i
+             )   $tmp (- $inp.(-)      &go_up     )     ; run go_right since > adjusts pos
+            )    $tmp (- $inp.(-)      &go_down   )     ; run go_left since < adjusts pos
+           )     $tmp (-           &rm_comment    )     ; in ; removes comment
+          )      $tmp (- set       $function++    )     ; in :
+         )       $tmp (- $inp.(-) &multiply       )     ; in *
+        )        $tmp (- $inp(-) &close           )     ; in ")"
+       )         $tmp (- $inp(-) &open            )     ; in "("
+      )          $tmp (- replace $function++++    )     ; in &
+     )           $tmp (- varmove $function+++++   )     ; move to a ($) (t is 1)
+    )            $tmp (- delete  $function++++++  )     ; !
+   )             $tmp (- $inp-- &macrend          )     ; end of macro
+  )              $tmp (- $inp-  &macstart         )     ; macro start
+
+; if add is set we are really in var and need to move
+; pointer to var area and copy error 
+$add(-@a
+  &err_move2buf
+)
+
+$function(  if function is set
+$inp.(-) print and reset inp
+!error!add!wrk!tmp remove allcation except function
+buf function hash inp
+; inp == c
+:sub ; v
+:more ; m
+:test	; z
+:error ; e
+:hash
+ $more+(-
+    ; This either shifts everything (function and hash so far one left or read a byte
+    $buf+$I+[  -$buf- $function[-<+>] $error[-<+>] $hash[-<+>]< @hash $inp ]>[-# @buf$I+$buf,[+[-$I-]]<[-@I<] $I- $sub] ; also checks for eof
+    $buf(-$inp+$test+)          ; zerocopy v to inp and test
+    $more++++++(-$test--------) ; reduce test by 48 ascii 0
+    $sub+++++++++               ; set 9 to v
+    (>>[-<]<[>]@more$sub-)     ; test - sub
+     $more+$test(                ; set more goto test check set
      ;this means it is set eg no match for digits
      --------                   ; reduce z by 8 A
-     $m++++(-$v+++++)$v         ; set 25 to v
-     (>>[-<]<[>]@m$v-)          ; z sub v
-     $m+$z(
+     $more++++(-$sub+++++)$sub     ; set 25 to sub
+     (>>[-<]<[>]@more$sub-)    ; z sub v
+     $more+$test(
       ;this means it is set eg no match again for upper case letters
       -----                     ; reduce z by 5 _
       (--                       ; check for underscore reduce by 2 ascii a
-      $m++++(-$v+++++)$v        ; set 25 to v
-      (>>[-<]<[>]@m$v-)         ; z sub v
-      $m+$z(
+      $more++++(-$sub+++++)$sub ; set 25 to v
+      (>>[-<]<[>]@more$sub-)   ; z sub v
+      $more+$test(
       ; this means it is set eg no match against lower case letters
-      $m-                       ; reset m
-      $z(-)                     ; reset z
+      $more-                       ; reset m
+      $test(-)                     ; reset z
   ))))
-  ;if m is set then we matched /\w|_/i
-  $m(-
-      $e(-)+ set e
-      $h(-$w+) move h to w
-      $w(-$h++) double h
-      $c.-(-$h+) pour c to h
-      $z+
-    )
-    $z(-$m+)
-  )
 
+  $more(-
+      :copy:source:htmp:mcon
+      $error(-)
+      $mcon+++++++++++
+      $hash(-$copy+$source+) move h to w
+      $mcon(-$copy(- $error+$hash[-<-]<[@error+++++(-$test++++++(-$hash+++++++))$hash--$test] test )$source(-$htmp+$copy+)$htmp(-$source+))
+      $source(-$copy-)
+      $inp. (- $error+$hash[-<-]<[@error+++++(-$test++++++(-$hash+++++++))$hash--$test] test ) pour c to h
+      $error+ set e
+      $test+
+      !mcon!htmp!source!copy
+    )
+    $test(-$more+)
+  )
 ; compatibility notice: if first char did not match matched /\w|_/i we have e set to zero
 ; this will be an error
-$e(-$t+) copy e to t
-$w+ set working to 1
-$t($w-
 
-;implementations with more than 8 bits might have large number
-;when dealing with long variable names but we do a mod 251
-$8(
-  $i(-$a+) move i to a
-  $8(-$i+)  copy 251 to i
-  ;8|h|i|t|w|a
-  $h(-$i-
-     [>-]>
-       (-@t
-        $8(-$i+)-$i+ put 251 back to i
-       )
-       $t+$8+
-       )
-   $8(-$i+$v+) move directly to v
-   $w+
-)
-$w(-
- $i(-$8+) restore 251 to 8
- $a(-$i+) restore i
-)
+;!error!test!more!sub
+;:divisor:ok:error:ok_error
+$more+
+$error(-$more-$sub+) we have two flags ok and error
+$sub(-
+
+move new char to buffer
+$inp(-$buf+)
+
+; print out hash on allocation and macro create only
+$function(-$inp+$sub+)
+$inp(-$function+)
+$sub-(-((-)$error-))
+$error+
 
 hash is now  new input
 move hash to v
 increase once to make it between 1 and 252
-$h+(-$v+)
+$hash+
+:divisor
+$divisor*15+
 
-move c to hash
-$c(-$h+)
+$hash &divmod @hash
+$divisor(-)
+
+$error(-
+$hash++++++++(-$divisor++++++++)$divisor---.++++
+; 0|*32|rem|quot|0|0
+>>(->+>+) $divisor(->>+>+) >>> . (-)
+; 0|0|rem|32|*0|quot
+<<(->+>+) > . (-)
+; 0|0|0|*0|rem|quot
+>(-<<+)
+>(-<<+)
+)
+
+$divisor-
+<+[-<+]--      change ~1 to ~2 at I
+<++[--<++]--   @M
+$c-$v+[->+]- >  back to input
+[- <<+[-<+]- >++[->+]- >]      copy remainder
+<+>->                             move marker
+[- <<+[-<+]- >*15++[->+]- >]   copy divident
+<+<@divisor
+
+$inp-                         move marker
+$function-([-<+]-@c$i++[->+]-@inp) 
+$inp+
+++[--<++]-                        change I to ~1 again
+<+[-<+]@c                         reset m
+$t+
 
 $i new switch
   (-
    (-
     (-
      (-
-      (-$t- &var_del        )
-        $t (- &var_move     )
-     ) $t (- &run_macro     )
-    ) $t (- &var_create     )
-   ) $t (- &var_position_set)
-  ) $t (- &macro_create     )
+      (-$t- &var_del         )
+        $t (- &var_move      )
+     ) $t (- &run_macro      )
+    ) $t (- &var_position_set)
+   ) $t (- &var_create       )
+  ) $t (- &macro_create      )  
+  &err_move2buf
  )
- $w (-$c(-)$e++) set error flag
+ $more(-$error+)
 )
 check for error
-$t+                                                 ; set flag
-$e(
+$test+                                                 ; set flag
+$error(
 ;    ++++++++++++++++++++++++++++++++++++++++++++++++.
-    $e(-)$t-$c<+>->(-)>(-)                          ; remove flag. simulate stack at v.
+    >->-->>>>@error                                    ; shortest code to induce error
 )
-$t(-                                                ; if flag set (no error)
+$test[-
 read another byte and exit if EOF
-&i
-$m+$v+   check for ~1
-[-$m-]   at eof if in this
-$z[@m->] ))                                      ; loop until read EOF == 0/ -1/ no change
+$buf+$I+[- $buf- @function ]
+>[[-@buf $I- $function+ $buf, #[+[- $function- ]]]
+>[-@function $inp]]]
+)                                      ; loop until read EOF == 0/ -1/ no change
 
 &print_if_stack_error

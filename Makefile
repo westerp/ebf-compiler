@@ -17,8 +17,9 @@
 
 SVNREPO = https://ebf-compiler.googlecode.com/svn
 INTERPRETER = tools/jitbf
-INTREPRETER_FLAGS = -b 8
+INTERPRETER_FLAGS =
 BOOTSTRAP_FLAGS = --eof 0 -b 32
+EBF = ebf.bf
 JITBF = tools/jitbf
 CC = gcc -O2
 DESIGN = bunny.txt
@@ -32,33 +33,33 @@ all: 	test test-bin
 testall: test test-bin test-interprenters
 
 test-interpreters:
-	make test INTERPRETER=bf INTREPRETER_FLAGS=
-	make test INTERPRETER=beef INTREPRETER_FLAGS=
-	make test INTERPRETER=bf1.pl INTREPRETER_FLAGS=
+	make test INTERPRETER=bf INTERPRETER_FLAGS=
+	make test INTERPRETER=beef INTERPRETER_FLAGS=
+	make test INTERPRETER=bf1.pl INTERPRETER_FLAGS=
 
 $(INTERPRETER).test.tmp: ebft.bf tools/test.sh
-	tools/test.sh "$(INTERPRETER) ${INTREPRETER_FLAGS}" ebft.bf
+	tools/test.sh "$(INTERPRETER) ${INTERPRETER_FLAGS}" ebft.bf
 	@touch $(INTERPRETER).test.tmp
 
 test-bin: $(INTERPRETER).test-bin.tmp
 
 $(INTERPRETER).test-bin.tmp: ebf-bin.bf tools/test.sh
-	tools/test.sh "$(INTERPRETER) ${INTREPRETER_FLAGS}" ebf-bin.bf
-	tools/test.sh "$(INTERPRETER)" ebf-bin.bf
+	tools/test.sh "$(INTERPRETER) ${INTERPRETER_FLAGS}" ebf-bin.bf
+	tools/test.sh "$(INTERPRETER) -b 8" ebf-bin.bf
 	tools/test.sh "$(JITBF) --perl" ebf-bin.bf
 	tools/test.sh bf ebf-bin.bf
 	tools/test.sh beef ebf-bin.bf
 	@touch $(INTERPRETER).test-bin.tmp
 
-compile: ebft.bf
+ebft: ebft.bf
 
-ebft.bf: ebf.bf ebf.ebf
-	cat ebf.ebf | $(INTERPRETER) ${INTREPRETER_FLAGS} ebf.bf | tee  ebft.tmp | tools/apply_code.pl object-design/$(LOADING) && \
+ebft.bf: $(EBF) ebf.ebf
+	cat ebf.ebf | $(INTERPRETER) ${INTERPRETER_FLAGS} $(EBF) | tee  ebft.tmp | tools/apply_code.pl object-design/$(LOADING) && \
 	tools/ebf_error.pl ebft.tmp && \
 	mv ebft.tmp ebft.bf && ( diff -wu ebf.bf ebft.bf || true ) 
 
 fast: ebf.bf ebf.ebf
-	tools/strip_ebf.pl ebf.ebf | $(INTERPRETER) ${INTREPRETER_FLAGS} ebf.bf | tee  ebft.tmp | tools/apply_code.pl object-design/$(LOADING) && \
+	tools/strip_ebf.pl ebf.ebf | $(INTERPRETER) ${INTERPRETER_FLAGS} ebf.bf | tee  ebft.tmp | tools/apply_code.pl object-design/$(LOADING) && \
 	tools/ebf_error.pl ebft.tmp && \
 	mv ebft.tmp ebft.bf 
 
@@ -76,6 +77,7 @@ clean:
 	rm -rf ebf ebf.c ebft.bf ebf.bf *.tmp  tools/*.tmp *~  ebf-compiler-* ebf-*.ebf ebf-bin-* ebf-handcompiled.bf*
 
 replace: ebft.bf test
+	mv ebf.bf ebf-old.bf
 	cp ebft.bf ebf.bf
 
 binary: ebf-bin.bf
@@ -114,6 +116,8 @@ ebf-bin-bootstrap.bf:
 		wget -nv 'http://ebf-compiler.googlecode.com/svn/tags/ebfv1.2.0/ebf.ebf' -O ebf-1.2.0.ebf && \
 		echo "Downloading previous source ebfv1.3.0 to compile it with v1.2.0" && \
 		wget -nv 'http://ebf-compiler.googlecode.com/svn/tags/ebfv1.3.0/ebf.ebf' -O ebf-1.3.0.ebf && \
+		echo "Downloading previous source ebfv1.3.2 to compile it with v1.3.0" && \
+		wget -nv 'http://ebf-compiler.googlecode.com/svn/tags/ebfv1.3.2/ebf.ebf' -O ebf-1.3.2.ebf && \
 		echo "tools/strip_ebf.pl ebf-1.1.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-handcompiled.bf > ebf-bin-1.1.0.bf" && \
 		tools/strip_ebf.pl ebf-1.1.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-handcompiled.bf > ebf-bin-1.1.0.bf && \
 		tools/ebf_error.pl ebf-bin-1.1.0.bf && \
@@ -123,7 +127,10 @@ ebf-bin-bootstrap.bf:
 		echo "tools/strip_ebf.pl ebf-1.3.0.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.2.0.bf > ebf-bin-1.3.0.bf" && \
 		tools/strip_ebf.pl ebf-1.3.0.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.2.0.bf > ebf-bin-1.3.0.bf && \
 		tools/ebf_error.pl ebf-bin-1.3.0.bf && \
-		cp  ebf-bin-1.3.0.bf ebf-bin-bootstrap.bf || false; \
+		echo "tools/strip_ebf.pl ebf-1.3.2.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.3.0.bf > ebf-bin-1.3.2.bf" && \
+		tools/strip_ebf.pl ebf-1.3.2.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.3.0.bf > ebf-bin-1.3.2.bf && \
+		tools/ebf_error.pl ebf-bin-1.3.2.bf && \
+		cp  ebf-bin-1.3.2.bf ebf-bin-bootstrap.bf || false; \
 	fi
 
 help:
@@ -131,7 +138,8 @@ help:
 	@echo actually tries to get previous versions of the compiler source from tags in the svn repository.
 	@echo
 	@echo The compile chain done is the reverse of this dependency tree:
-	@echo 1. ebf.ebf in this release requires binary from ebf-1.3.0 or newer
+	@echo 1. ebf.ebf in this release requires binary from ebf-1.3.2 or newer
+	@echo 2. ebf-1.3.2 requires binary from ebf-1.3.0 or newer
 	@echo 2. ebf-1.3.0 requires binary from ebf-1.2.0 or newer
 	@echo 3. ebf-1.2.0 requires binary from ebf-1.1.0 or newer
 	@echo 4. ebf-1.1.0 requires binary from any previous version of ebf. It will work with the first hand.compiled version.. 
