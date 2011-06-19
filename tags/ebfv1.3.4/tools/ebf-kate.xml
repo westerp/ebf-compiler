@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ $Id$
+
+ This file is part of ebf-compiler
+
+ ebf-compiler is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ (at your option) any later version.
+
+ ebf-compiler is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+
+ This file applies syntax highlighting to Kate editor
+ To apply this to your Kate, put it in the directory
+ ~/.kde/share/apps/katepart/syntax
+
+ if it does not exist do mkdir -p ~/.kde/share/apps/katepart/syntax
+
+-->
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Extended BrainFuck" version="1.00" kateversion="3.4.2" section="Sources" extensions="*.ebf;*.bf;*.b" author="Pål Wester" licence="GPL">
+<highlighting>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <!--keyword attribute="Instructions (side effects)" context="#stay" String="Instructions (side effects)"/-->
+        <RegExpr attribute="Normal Text" context="#stay" String="\s*\}\s*/" endRegion="Block"/>
+        <DetectChar attribute="Macro (balanced)" context="#stay" char="{" beginRegion="Block" />
+        <DetectChar attribute="Macro (balanced)" context="#stay" char="}" endRegion="Block" />
+        <DetectChar attribute="Instructions (balanced)" context="#stay" char="(" beginRegion="BBlock" />
+        <DetectChar attribute="Instructions (balanced)" context="#stay" char=")" endRegion="BBlock" />
+        <DetectChar attribute="Instructions (while loop)" context="#stay" char="[" beginRegion="WBlock" />
+        <DetectChar attribute="Instructions (while loop)" context="#stay" char="]" endRegion="WBlock" />
+        <RegExpr attribute="Instructions (pointer)" context="#stay" String="[&lt;&gt;]"/>
+        <RegExpr attribute="Instructions (math)" context="#stay" String="[-\+]"/>
+        <RegExpr attribute="Instructions (side effects)" context="#stay" String="[,.]"/>
+        <RegExpr attribute="BFA variable" context="#stay" String="[:\!@^]\w+"/>
+        <RegExpr attribute="BFA function" context="#stay" String="[\$&amp;]\w+"/>
+        <RegExpr attribute="Comment" context="#stay" String=";.*"/>
+        <RegExpr attribute="Comment" context="#stay" String="[|\w]+"/>
+       </context>
+    </contexts>
+
+	<itemDatas>
+      <itemData name="Instructions (math)" defStyleNum="dsKeyword"/>
+      <itemData name="Instructions (pointer)" defStyleNum="dsOthers"/>
+      <itemData name="Instructions (while loop)" defStyleNum="dsAlert"/>
+      <itemData name="Instructions (balanced)" defStyleNum="dsRegionMarker"/>
+      <itemData name="Macro (balanced)" defStyleNum="dsRegionMarker"/>
+      <itemData name="Instructions (side effects)" defStyleNum="dsKeyword"/>
+      <itemData name="BFA variable" defStyleNum="dsDataType"/>
+      <itemData name="BFA function" defStyleNum="dsFunction"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+    </itemDatas>
+
+</highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start=";"/>
+    </comments>
+  </general>
+</language>
