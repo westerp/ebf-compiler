@@ -23,7 +23,7 @@
 ; data structure -1|abc.....|-1
 ; where ... is 0-7 for each brainfuck code
 
-ML|lcue|destination|plus|right|source|source2|sourcen|cue|zero|sym_plu|cr_plu|sym_gt|cr_gt|sym_lt|cr_lt|sym_op|cr_op|sym_cl|cr_cl|sym_min|cr_min|sym_pr
+ML/lcue/destination/plus/right/source/source2/sourcen/cue/zero/sym_plu/cr_plu/sym_gt/cr_gt/sym_lt/cr_lt/sym_op/cr_op/sym_cl/cr_cl/sym_min/cr_min/sym_pr
 
 
 {seek1down +[-<+] @lcue}
@@ -31,7 +31,7 @@ ML|lcue|destination|plus|right|source|source2|sourcen|cue|zero|sym_plu|cr_plu|sy
 {print_minus +++++(->+++++++++)>.}
 {data ->>>> PLACEHOLDER -
 ; quine-generator uncomment this
->--@zero $eom
+;>--@zero $eom
 }
 
 we are at the last char
@@ -43,13 +43,10 @@ we are at the last char
 @cue
 ; seek for -1-2. 
 ; used in quine-generator
- +[[-<+]->++[--<<]] @zero
+; +[[-<+]->++[--<<]] @zero
 
-
-#
-$sym_plu&print_minus ; prints -
 $sourcen &seek1down
-$destination*9+(-$plus*5+$right*7+)$plus--$right-....
+$destination 9+(-$plus 5+$right 7+)$plus.--$right-....
 ; this part creates the code that creates the data structure
 ; so far not sure how it should represent but a good test 
 ; would be to create some data and try to see if it recreates the same code
@@ -62,17 +59,17 @@ $source
       $plus   &copy2right
       $source2+@source
  )
-#
 
 @sym_plu
 $zero(-$sym_gt+$sym_lt+)
-$cue++(-$sym_plu+$cr_gt-$sym_op++$sym_cl++$sym_min+$sym_pr+
+$cue++(-$sym_plu+$sym_op++$sym_cl++$sym_min+$sym_pr+
 ; quine-generator quine needs ,. commented out for normal operations
-$sym_rd+
+
+;$sym_rd+
 )
 $sym_plu--$sym_lt--$sym_op+$sym_cl+++$sym_pr+
 ; quine-generator need ,.
-$sym_rd-
+;$sym_rd-
 [<<]
 
 +<@cue

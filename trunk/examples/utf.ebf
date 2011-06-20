@@ -17,67 +17,77 @@
 ; You should have received a copy of the GNU General Public License
 ; ]
 
-:t tmp
-:i input
-:z zero or adding aide
-:c compare
+:tmp
+:input
+:zero or adding aide
+:compare
 
-{e
-  checks for eof
-  $z+$i+[-$z-]$c[@z-$c]
+;; read reads a byte from stdin
+;; to support all eof types in brainfuck
+;; we set it initialy to zero and afterwards
+;; check if adding 1 will result in a zero and
+;; then leave it at zero.
+{read
+  $zero+
+  if read $input(-),+ is 0
+  [-$zero-]@input
+  if $zero
+  [-$compare]
 }
 
-{d
-    divids t with i curent with next
-    $t[->-[>+>>]>[+[-<+>]>+>>]<<<<<]@t 
-    after t=0 i=positive z=n%d c=n/d
+;; divmod performs divide and modulus at the same time
+;; needs 3 additional cleared cells to work
+;; @argument ^0 divident
+;; @argument ^1 divisor
+;; @return ^1   divisor-modulus
+;; @return ^2   modulus in  ^2
+;; @return ^3   quotient in ^3
+{divmod
+    [->-[>+>>]>[+[-<+>]>+>>]<<<<<]*-3
 }
 
-{s
-    sets all bits in c as 7 bit ascii
-    $z+++++++++++  11 in z
-  (-$c+++++++++++) 11 in c = 121
-  $c++++++	  127 in c
+{set_127
+    sets all bits in compare as 7 bit ascii
+    $compare ~"~"<+       store 127 in compare
 }
 
-{m
-    substracts i from c without reducing c below zero
-    $i($t+$c[-$z]$i[$z]$i-)
+{substract
+    substracts input from ccompare without reducing compare below zero
+    $input($tmp+$compare[-$zero]$input[$zero]$input-)
 
 }
 
-{C $c(-)}
-{Z $z(-)}
+{clear (-)}
 
-$i,(
-   &s set 127 in c
-   i=x|z=0|c=127
-   &m substact i from 127
+$input &read
+while $input (
+   &set_127 set 127 in compare
+   ;i=x|z=0|c=127
+   &substract i from 127
 
-   $z+	set z
-   $c (&C if c is not zero is 7 bit us ascii
-  	$z-
-	$t.(-)
+   $zero+	set z to 1
+   if $compare is not null
+   (
+        $compare &clear if compare is not zero its 7 bit us ascii
+  	$zero-
+	$tmp. &clear
    ) 
-   $z(
-       +++++++ adds 7 so we have 8 in z
-    (-$i++++++++) multiply by 8 so we have 64
-    $t
-    &d	divide t with i=64
-    $i(-)
-    +++++++++++  11 in i
+   if $zero flag set
+   (
+    7+(-$input 8+) multiply 8 by 8 so we have 64 in input
+    $tmp &divmod divide tmp with i=64
+    $input &clear 11+ 11 in input
     (-
-	$z+++++++++++ increase n with 121
-    	$c++++++++++++++++++ increase c with 198
+	$zero 11+       increase n with 11 by 11 = 121
+    	$compare 18+    increase c with 11 by 18 = 198
     )
-    $c------  decrease c with 6 so we have set the 2 MSB
-    .         print first utf byte
-    &C
-    $z+++++++ increase z by 6 so we have set the LSB
-    .         print second utf byte
-    &Z
+    $compare 6-  decrease compare with 6 so we have set the 2 MSB
+    . &clear     print first utf byte then clear
+    
+    $zero 7+    increase zero by 7 so we have set the LSB
+    . &clear    print second utf byte and clear
    )
-   $i,&e
+   $input &read
 )
 
 

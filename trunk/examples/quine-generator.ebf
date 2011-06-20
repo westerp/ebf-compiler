@@ -34,7 +34,7 @@ data is reversed
 {binary_quine  
 ; this is basically the reverse of the data created when binary-quine is
 ; created with all the 'special' quine-generator stuff enabled
-; the beginning (the code that creates ->--*17> is moved to 
+; the beginning (the code that creates ->--17> is moved to 
 ; special marker because this needs to be added first while
 ; the quine-data needs to be pu AFTER the external program data
 
@@ -56,7 +56,7 @@ $cue-$sourcen
 @sourcen
 ; "+"=>0,">"=>1,"<"=>2,"["=>3,"]"=>4,"-"=>5,"."=>6,","=>7
 &read (
-  $source2*6+(-$sourcen*7-)+$sourcen-
+  $source2 6+(-$sourcen 7-)+$sourcen-
   (-
     (-
       (-

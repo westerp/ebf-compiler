@@ -16,11 +16,18 @@
 ; You should have received a copy of the GNU General Public License
 ; ]
 
-ML|crumble|variable|macro|zero|global|global_macro|input|tmp|working|adding|position|error|nooverflow|macro_number|flag|zero|macro_area|I|buf|fun|inp|sub|more|test|error|hash|copy|source|htmp|33|
-PTR=1285|3
+[ Compiled with ? ]
+
+ML/crumble/variable/macro/zero/global/global_macro/input/tmp/working/adding/position/error/nooverflow/macro_number/flag/zero/macro_area/I/buf/fun/inp/sub/more/test/error/hash/copy/source/htmp/33/
+PTR=1285/3
 
 ; #########################################################################################
 ; MACRO DEFINITIONS
+
+{ebf_version
+;|"EBF $Rev$"(-)
+>++++++++[-<+++++++++>]<---.---.++++.>++++++[-<------>]<--.++++.>++++++[-<+++++++>]<++++.>++++[-<+++++>]<-.>++++[-<++++>]<+.>+++++++[-<-------->]<----.>+++++[-<----->]<-.>++++[-<++++>]<+.+.++.>++++[-<----->]<.++++.(-)
+}
 
 ; stack_error prints out ERROR if stack set
 ; It is used in the end of the application
@@ -43,7 +50,32 @@ PTR=1285|3
 {go_down &buf2var $a+$p[-$a-]$w[@a-$o(-)$w] &fake_buffer}
 
 ; implements removal of comments. Because of the newline we don't reuse this
-{rm_comment $inp(,----------)++++++++++.(-) }                    ; purge comments
+{rm_comment #$inp(,----------)$buf++++++++++@I }                    ; purge comments
+
+; lf looks at buffer and if its only space, tab or cr we remove
+; if buffer empty it reeds bytes until a char removing whitespace on the left side
+{lf 
+  # $function+  
+  $tmp &buffer_read
+  $tmp(-$inp+$wrk+)+
+  ; switch ( $inp ) cases '\10;' using $tmp,
+  #$inp----------; \10
+  ($tmp++++++(-$inp-------)+$inp; ;
+    ((-) $tmp(-)++++++++++.(-) )
+      $tmp (- match semi
+            $wrk(,----------)
+            ++++++++++
+           )
+  ) $tmp (-)
+  $wrk (
+      move back byte to buffer
+      $buf[<]@buf>[-]               ; make room for additional byte
+      >[>]@function                 ; and then 
+      $wrk(- $buf[<]@buf $I+        ; move
+            $function[>]@function )
+  )
+  $buf &buffer_cleanup
+}
 
 ; auto alighning bracket. ( is the one of two '(' and ')' where ( sets a stack
 ; to the position it is nowe and print out a  [.
@@ -95,7 +127,6 @@ PTR=1285|3
 {param
   move to position in stack
   with possible numeric operand for offset indication
-#
   $buf+$I+[-$buf-@function]>[-@buf$I-$buf$inp]
   $buf(-$function+$inp+)
   
@@ -128,48 +159,462 @@ PTR=1285|3
   &fake_buffer
 }
 
-
-
-; multiply the next operation by parameter count
-; only supports cell size increase
-{multiply
-  TODO reimplement in buffer
-  &buf2var
-  $t+(-
-    &I    ; read input into v
-    $v.(-$m+$z+$i+)               copy to m z and i
-    $v++++++++(-$m------$z------) reduce by 48
-    $c+++++++++                   ser 9 in c
-    (>>[-<]<[>]@v$c-)             m sub c
-    $v+
-    $m (   m was not number
-        $z(-)
-        check for lt and gt and update postion and reset nooverflow if overflow
-        $m---(
-        --( (-) $v- $w(-(-$i.)) )
-          $v (- $p+++ $w(-(>>[+<]<[>]@a$i.$w-)) $a+$p[--<-]$w(-@a$o(-)) )       ; >
-        ) $v (- $w(-(>>[-<]<[>]@a$i.$w-)) $a+$p[-<-]$w(-@a$o(-)) )              ; <
-        $t- set t to ~1
+; prints a char the number of times stored to the 
+; left -1 in decimal number (-1 is to make sure 0 is different than no number)
+; you have number|0|*char 
+{mulprint
+  :pprev:prev:number:mark:char:mark2:pinc:pdec:pback
+  @char
+  $number
+  (
+    $number-(-
+        $char.
+        $pdec+
+        $pinc[- ; > or <
+          $pinc[+ 
+            ; its >
+            $char 
+                &buf2var 
+                  $a+$p+++[$a-]
+                  $w[@a-$o(-)$p-$w]$p--
+                +[->+]->+[->+]-
+                @mark2
+            $pdec-
+          ]
+          $pback[
+            -@pdec
+             $pinc+
+                ; its <
+                &buf2var 
+                $a+$p[-$a-]$w[@a-$o(-)$w] 
+                +[->+]->+[->+]-
+                @mark2
+             $pback
+          ]
+          $pdec
+        ]$pback[@pdec-$pback]
+    )+
+    ;seek until > 1 but stop if next is zero
+    $prev(
+      $number-(
+          [<]>[-]@number        
       )
-    $v(-          m was number
-        $w(-$a++++++++++)$a(-$w+)
-        $z(-$w+)
-      )
-    $i(-)
-    $t+
+      ++++++++++@mark
+    )
+    @pprev
+    +$prev[- $pprev-$number[-]]
+    @prev$pprev[(-
+      $number---------
+    )
+    $number[-[+<<]>]>>[<<+[>]]]@mark
+    $number[+>]@mark
   )
-  &fake_buffer
+  +[->+]@mark2>[-]
+  $char(-)
+  !pback!pdec!pinc!mark2!char!mark!number!prev!pprev
 }
 
-; print_string takes a string parameter double quotes
+{multiply
+    ; treats inp as if it was a number
+    ; reads numbers until a \D is read
+    
+    ; we know inp has a number 
+    ; buf for the sake of shorter code
+    ; we do the validation again
+
+    ; we need 2 clear cells then a 1
+    ; before  number but we cannot have them zero here
+    ; I buf function input tmp wrk add error
+    $function+
+    $inp+(-$wrk+)+
+    $tmp++++++++(-$wrk------)
+    $tmp- ; we change this to 1 next
+    &read_numbers
+    $tmp(-$inp+$wrk+$add+)
+    +++++++++(-$wrk-----$add-------)++
+    ; tmp has 0 wrk has > - char and add a - - char
+    $wrk(++((-)$tmp-))                ; checks if - or + and if not match reduces tmp
+    $wrk++                            ; indicate which of <>
+    $add+($wrk-$add++((-)$wrk-$tmp-))  ; checks if > or < and if not match reduces tmp
+
+    ;if tmp is zero we should just print one literal and exit
+    ;if wrk is 2 we have >
+    ;if wrk is 1 we have <
+    ;if wrk is 0 we have +/- or literal
+    $wrk+$tmp(--$wrk-
+    ;  $wrk(-) ; for now just reset wrk
+    ; if the char is not <>+- we should just print it and we're finished
+      $inp+[-<+]+@tmp
+      <[-<] ; here we just removing buffer 1s 
+      +[->+]-@tmp
+      $inp
+      &mulprint
+      @inp
+    )
+    $wrk(- ; in case it's a & or something, copy back to buffer for processing
+            $tmp-$buf         ; make a mark on char end
+            &buffer_cleanup   ; clear the stash from buffer/number stuff
+            $function-        ; set function to -1 we now have buf|-1|.....|char(inp)|-1(tmp)
+            $inp+[->+]-@tmp
+            $inp(-
+                +[-<+]-@function
+                $buf+
+                $inp
+                +[->+]-@tmp
+            )
+            $tmp++[-<+]@wrk ; we are actually in function but next we sum up and find I so thats allright
+    )
+    +[-<+]-[>]@buf
+}
+
+
+; in a macro (or any where else), instead of using the @variable
+; to tell the compiler where your pointer is after a asymetric loop
+; you might write *-23 og *+3. Pointers over cell size is pointless
+; so number gets stored in one cell here.
+{pointer_fix  
+    $function+ ; make room for additional byte
+    $inp &buffer_read
+    $tmp++++++(-$inp-------)
+    $wrk+++++++++++(-$tmp++++++++++)
+    $inp-
+    (--
+       ( (-) $tmp(-) $buf &buffer_cleanup $error+ )
+      $tmp (-.(-)  $wrk+ $function+ )
+    ) $tmp (++.(-) $wrk+ $function++)
+    $wrk(-
+       $inp+@buf
+       $wrk+(-
+       $inp
+       &buffer_read
+       $inp(-$wrk+$tmp+$add+)
+       $inp+++++++(-$tmp-------$wrk-------)$tmp+
+       $function+++++++++
+       (>>[-<]<[>]$function-)
+       $inp+
+       $tmp( ; finished 
+              #(-)$inp(-)$wrk(-)            ; clear
+              $buf[<]@buf>[-]       ; make room for additional byte
+              >[>]@function         ; and then 
+              $add(- $buf[<]@buf $I+  ; move
+                    $function[>]@function )
+              $I
+              @function 
+              -(- if function is 2 then its increment
+                  $inp-(-
+                      &buf2var
+                      $a+$p+++[$a-]
+                      $w[@a-$o(-)$p-$w]$p--
+                      +[->+]-[>]@buf
+                      $function[>]@function
+                      )                  
+              )$inp(-(- if set its decrement
+                  &buf2var
+                  $a+$p[-$a-]$w[@a-$o(-)$w] 
+                  +[->+]-[>]@buf
+                  $function[>]@function
+              ))
+              $buf &buffer_cleanup
+           )
+       $inp(-
+            $buf-(-$wrk++++++++++)  ; reduce 1 multiply original with 10 and pour on tmp
+            $wrk++(-$buf+)         ; increase 2 (one for getting 0-9 and the second for storage
+            $add.(-)$wrk+
+           )
+      ))
+}
+
+; print_string takes a string parameter between delimiters (any)
 ; expects that the current cell and next cell are empty 
+; or else you will have (hopefully calculated) sideffects
+; to be shure you may want to >>(-)<(-)|"my string"
+; or just (-)|"my string" if u utilize the same place every time
 {print_string
-  please implement print_string
+  !error        ; safe-guarding against mre unknown variables
+  :diff         ; where the number to be created is
+
+  $function
+  ++++(->++++>++++)
+  +++++(-<+++++++++)< ; a minus
+  (->+>+>+>++>++>+>+)
+  >+>->+>+>+++>-->>
+  @inp          ; tell pointer we are in inp
+  &buffer_read  ; read delimiter
+  @wrk          ; wrk contains the char to be encoded
+  &buffer_read  ; read new char
+  $wrk( ; check for eof
+    (-$inp-$function+$diff+)
+    $inp( 
+        ; inp contains delimeter - new_char
+        ; function contains new_char
+        ; tmp contains last char (0 in the begining)
+
+        ; compare old char and new char to determine
+        ; which one is the largest
+        $tmp[ 
+              ; tmp=a wrk=0 add=1 diff=b
+              $add+ $diff[-$add-] 
+              $wrk[@add  b is smaller    
+                    $tmp(-$diff+)+  ; copy result to diff
+              $wrk]$tmp
+           -]
+        ; if add is 0, new char was larger
+        ; if add is 1, old char was lager but is moved to diff
+        ; A possible optimization would be to check if
+        ; starting from scratch eg [-]... would be shorter
+
+        ; we check if diff is 14 or lower:
+        ; off limits are (add minus)
+        :zero:14
+        $zero+++(-$14++++)$14++
+        ($diff[-$tmp+$zero]$14[$zero]$14-)
+        $zero+
+        $diff(   ; above 14 we do multimply 
+            $zero- $tmp(-$diff+)
+            !14!zero
+            $diff  &sqrt @diff
+            :point:lt:gt:while:end:plu:min:FUN:INP:zero:first:neg:mul1:mul2:neg2:rem
+            @mul1
+            $gt.$mul1(-$plu.)
+            $mul1+  ; uses mul1 as not negative flag
+            $while.$min.$lt.
+            $neg(-
+                  ; if it's negative we need to negate neg2
+                  $neg2- ; if zero => -1, if 1 => 0. perfect but must use (-) to clear
+                  $mul2(-$min.)
+            )$mul1(-
+                  $mul2(-$plu.)
+            )
+            $gt.$end.$lt.
+            $mul2+ ; uses mul2 as not negative flag
+            $neg2((-) ; remember above comment :)
+                $rem(-$min.)
+                $mul2-
+            )$mul2(-
+                $rem(-$plu.)
+            )
+            $point.[>]@tmp
+            !rem!neg2!mul2!mul1!neg!first!zero!INP!FUN!min!plu!end!while!gt!lt!point
+        )>(- ; 14 or lesser. Its more economic just to have it added
+            :point:lt:gt:while:end:plu:min:FUN:INP:char:pos:neg:DIFF:flag
+            @flag
+            $pos+
+            $neg(-$pos-
+                  $char(-$min.)
+                 )
+            $pos(-
+                  $char(-$plu.)
+                 )
+            $point.
+            [>]@tmp
+            !flag!DIFF!neg!pos!char!INP!FUN!min!plu!end!while!gt!lt!point
+        )
+        $function(-$inp+$tmp+) ; restore quote and set last char in tmp
+        @wrk ; tell we are at work (doesn't matter since we have lots of chars between buf and function)
+        &buffer_read
+        $add+
+        $wrk(-$inp-$function+$add(-)$diff+)
+        $add(- $inp(-) ) ; eof
+        ; read new byte and check for delimiter
+    ) ; at inp
+  ) ; at wrk
+  ; cleanup
+  $diff(-)
+  $tmp(-)
+  $function
+  &buffer_cleanup
+  !diff:error   ; replace diff with error
 }
 
-{store_string
-  please implement store_string
+; divide uses divmod and puts the rounded result in ^0 and indication of rounded in ^1
+;{divide &divmod >+(-<+) <[>>[-<]<[>]<-] >>([-]<+<+)>(-<<<+)@res} 
+
+; roundivmod uses divmod and puts the rounded result in ^0 and indication of rounded in ^1
+; and a remainder (which ^1 is an indication is either reduction or inrement) in ^2
+{roundivmod 
+    &divmod @cur
+    ; *0|n-rem|rem|res|
+    >>>(-<<<+)
+    <(->>+>+) make double copy of remainder
+    ; res|n-rem|0|0|rem|rem
+    <(->+>>>>+)
+    ; res|0|n-rem|0|rem|rem|n-rem
+    >+[>>[-<]<[>]<-]
+    >>>+<(
+       [-]>[-]
+       >(-<<<<+)
+       <<<<<+<+
+      )
+     >(-
+        >[-]
+        <(-<<<+)
+      )
+  end divide
+} 
+
+
+
+
+; sqrt ^0  uses  9 cells that need to be empty
+; will be fuzzy after calling because of divmod
+; returns ^0 result
+;         ^1 same as ^0 or it increased by 1. typically will ^2*^3 be closerto the requested argument than ^2*^2
+;         ^2 remainder
+;         ^3 indicates if remainder is negative
+{sqrt
+  check for wrong usage !diff:diff
+  :in:guess:temp:cur:div:mod:res:indicator
+  @in
+  $guess+     ;initial guess is 16, but
+  $mod 15 +++++++++++++++    ; its in mod and incremented (rounded up)
+  $guess(     ; worst case is 1 with 5 iterations
+      $cur+$temp+
+      $guess(-$temp[->-$mod+$cur]>[@cur-$temp+$div]$cur+)
+      $temp(-)$cur(-)
+      $in(-$guess+$cur+)
+      $guess(-$in+)
+      $mod(-$div+$guess+)
+      $cur &roundivmod ; remainder wil now be in mod
+      $mod(-$res+)
+      $cur(-$mod+$guess-)
+      $temp+
+      $guess[-[+$div(-)$res(-)$temp-]>[-@temp$indicator+$cur]$temp]>[-@temp>]
+  )
+  $in(-)
+  $mod(-$guess+$in+)
+  $indicator(-$guess+)
+  $res(-$cur+)
+  $div(-$temp+)
+  $in
+  !indicator!res!mod!div!cur!temp!guess!in
 }
+
+
+
+
+{store_string ; eg ~
+  !error!add        ; safe-guarding against more unknown variables
+  ;add 8, then divide each char with 16 
+  ; copy remainder
+  ; sub one without wrap with 7
+  ; if zero then do 8-remainder and use -
+  ; if not then do remainder-8 and use +
+  ; 
+  ; code should print out remainders first
+  ; eg +>-->>+>
+  ; then a static
+  ; code >++++[-<++++>]<[-
+  ; then the divided should be 
+  ; put in reverse order prefixed
+  ; with a <
+  ; finally > in the number of chars
+  ; then ]
+  
+  ; $fun~"[]<>-+" ; from fun => error
+    ++++(->++++>++++)  ; 0|0|16|16
+  <+++++(-<+++++++++)< ; 45|0|0|16|16|0|0
+  (->++>++>+>+>+>+)    ; 0|90|90|61|61|45|45
+  >+>+++>->+>>-->
+  ; this does it in 78 chars while this procedure
+  ; will do it in 84. 7% overhead in such a short 
+  ; text is not bad cosidering it's meant to do best
+  ; on an medium sized sentences. For large sentences
+  ; 36! outperformes 16 as a multiplier. This came as 
+  ; a surprise as this meant  the remainder would be
+  ; +-18 but it may be because it almost certainly
+  ; turns int o 3 multiples + 
+  
+  +>@function
+  $inp &buffer_read             ; quote-sign (any)
+  $function-                    ; set mark for where to find <>.. (for buffer_read function will be this-tmp)
+  $inp &buffer_read             ; first byte in wrk (fooling ebf macro since it thinks it is in inp)
+  $buf(-$function+$inp-$tmp+)   ; move quotemark making the differences between and new char
+  @function                     ; say we are at function (which is true accoring to the zero :)
+  $tmp(
+      $wrk(-$tmp+)                  ; restore original
+      +[-<+]-<+[>]@function+        ; increase char count, inc function
+      ; tmp|wrk|
+      :rem:res
+      $rem++++(-$wrk++++$tmp++)     ; create 16 in wrk and add 8 to $tmp
+      $tmp &divmod @tmp             ; divide with 16
+      $wrk(-)                       ; reset divider-remainder
+      $res(-$function+)             ; store result in function
+      $rem(-$wrk+$tmp+)             ; copy remainder to wrk and tmp
+      $res+++++++                   ; set 7,
+      $res (<<[->]>[<]@rem$res-)   ; substract 7 from remainder without reducing it below zero 
+      $tmp+
+      $wrk(-
+            ;we do +
+            $tmp(-)                 ; reset tmp
+            $wrk( 
+                [-<+]-              ; move to marker
+                <<.                 ; to the +
+                [>]                 ; back to tmp
+                @tmp
+                )
+          )
+      $tmp(-
+            ; we do -
+            $wrk++++++++            ; 8 in wrk
+            $tmp(-$wrk-)            ; 8 - rem == number of '-'s
+            $wrk( 
+                [-<+]-              ; move to marker
+                <<<.                ; to the -
+                [>]                 ; back to tmp
+                @tmp
+                )
+      )
+      +[-<+]-                        ; move to marker
+      <<<<.[>]@function              ; print a single > and go back
+      ;; NB here we assume function since read_buffer will do so
+      ;; Our quote will be in buf
+      $inp &buffer_read              ; read from buffer
+      $buf(-$function+$inp-$tmp+)   ; move quotemark
+      @function                      ; say we are at function
+   )
+   ; here we might have one quote on each side
+   $wrk(-)
+   $inp(-)
+   ; create some variables we can use
+   :while:end:lt:gt:min:plu:cnt:mark:next:current:mark2:romark2
+   +[-<+]@mark
+   $cnt-(
+          ; we need to create this:
+          ; >++++[-<++++>]<[-
+          $gt.$plu....$while.$min.
+          $lt.$plu....$gt.$end.
+          $lt.$while.$min.
+
+          $mark-[>]-@mark2
+          $current+[-            ; this checks for -1 eg mark
+              +[-<+]-@mark       ; moves to mark   
+              $lt. [>]@romark2   ; prints < ang goers back
+              $current           ; move to current multimplier
+              -(                 ; reduce by 1 as all are added with one to not be zero
+                  [-<+]-@mark    ; reduce current while searching for mark
+                  $plu.          ; print a plus
+                  $next          ; go to the first cell on the right of mark
+                  +[->+]-@mark2  ; go back to mark2
+               )                 ; continue until zero
+               -$mark2+@romark2  ; shift mark one place left
+               $current+         ; increase new current to stop at mark 
+          ]-$mark2+@next
+          $cnt(-
+                $gt.            ; print >s NB we need to increment p too
+                ++[--<++]--@M   ; at variable area
+                $a+$p+++[$a-]   ; go to var area
+                $w[@a-$o(-)$p-$w]; and update
+                $p-[->+]-@I      ; position
+                >+[->+]-@mark;   :)               
+              )
+          $mark+ ; reset mark           
+          $end.
+   )
+   $plu &buffer_cleanup
+  !romark2!mark2!current!next!mark!cnt!plu!min!gt!lt!end!while!res!rem
+  :add:error restore error
+}
+
 
 ; auto alighning bracket. ) is the second of two '(' and ')' where ) pops the stack
 ; and creates the command to move to that location before changing ) to a ]
@@ -247,25 +692,6 @@ PTR=1285|3
     variable position end
 }
 
-
-; Assumes we have a position in i and a
-; where we want to move and create < and >
-; to do so. Used by both varmove and param 
-{posmove
-    $z<++++++(->++++++++++)                   ; 60 in z (<)
-
-    error checking is i 0 set e t is still 1
-    $i[-$t-$w+$a-
-    ; we have new position in i and old in p
-    $p( $a [-$w-]<[@w-
-        $p[-$z.$p] + $t] $w+$p-)            ; a is smaller than p, eg. <
-    $z++$w-$a(-$z.)$z(-)
-    $i(-$p+)                                ; set current position
-
-    $t]>[@t$e+$t->]@w                       ; set error flag if t is not set
-}
-
-
 ; implements the at (@). After an uneven loop you may use @ to
 ; indicate where amoungst the variables the  applicatuion is.
 ; trying to indicate a non existing variable will induce ERROR
@@ -326,39 +752,40 @@ PTR=1285|3
 
     $t(- $G+)           restore new G
 
-    there is always a ~1 where input starts and its to the right of where macro should have its first char
+    there is always a minus 1 where input starts and its to the right of where macro should have its first char
     lets copy buf there
+;    |B|F|Z|test|0|0|test2|0|0|0|-1|buf
     +[->+]@I      move to I and remove marker
-    $buf(-$M+)$I  copy first buffer 
-;    |B|F|Z|test|0|0|test2|0|0|0|~1
-;    $M>>[[>]>>>]
-;    >(-)                remove marker
+    $buf(-$I+$M+)  copy first buffer 
     @t to make this easy we assume we are at t
-;    $t+$i[$t-]>(@t-$i,)
-    $t+$i(
+
+    $t+$i( 
         $t+++++++(-$i-------)+$i---          reduce by 59;  (;)
         (>+++++++(-<--------)+<              reduce by 64;  ({)
-            (--                              reduce by 2 ;  (})
-            ( restore by increase of 125
-                $t++++++++++(-$i+++++++++++) increase 121
-                $i++++>@i                    inc 4 == 125
-                $w+
-            )$t (-                           in close macro ;eg }
-                $t+
+            (-                               reduce by 1 ; (|)
+            (-                               reduce by 1 ;  (})
+            (-                               reduce by 1 ; (~)
+            ( (-) catch all 
+                $t-$w+
+            )
+              $t (- $w++ store_string)
+            ) $t (-                           in close macro ;eg }
+                 $i+<.(-)@i
+                 ; need to change this
 ;                h=char|i=0|t=1|w=0
                 $i<[>]
                 >(-)
                 >(@i no char in macro error
-                  [--<++]--@M                 go back to ~2 while setting i to ~1
+                  [--<++]--@M                 go back to m2 while setting i to m1
                   $e++[->+]@t                 set e and go back to i and say its t
-                )
-            )
+                ))
+            )$t(- $w++  print_string )
             )$t(                              in open macro which is an error since
                 +[--<++]--@M                  a macro definition cannot
                 $e+++$M>>[[>]>>>]@i           contain another macro definition
             )
         )$t(-                   in comment ignore everything until cr; (;)
-            #$i+<----------
+            $i<(-) @i+<----------
             [++++++++++>-]
             >[-@t]
             $i+(,----------)    read until cr ; TODO: Check for eof-s
@@ -366,12 +793,33 @@ PTR=1285|3
             >@i
             $w+
         )
-        $w(-$t+$i,              continue reading if w is set
-            +[-$t-]$w[@t-$w]    check eof
-            $t+                 set t for next run
+        $w(-
+            (-                  ; in store_string/print_string
+              :next:qub:qua:input:tst:zero
+              @qua 
+              $tst+
+              $input,              continue reading if w is set
+              [+[-$tst-]]$zero    check for
+              [@tst-$zero]        eof
+              $input(
+                (-$qub+$next+) store the qote first
+                $qua+((-)
+                    $qub(-$qua+$input+)@next
+                    $tst+ $input,              continue reading if w is set
+                    [+[-$tst-]]$zero    check for
+                    [@tst-$qub(-)$zero]        eof
+                    $input(-$qua-$next+)
+                )$qub(-)@input
+                )@i
+               !zero!tst!input!qua!qub!next
+            )
+            $t+$w,              continue reading if w is set
+            +[-$t-]$i[@t-$i]    check eof
+            $w(-$t+$i+)
+            @t+                 set t for next run
         )
     )>>>>                        set new buffer marker
-    +[--<++]--@M                go back to ~2
+    +[--<++]--@M                go back to m2
     end macro open tag
 }
 
@@ -415,42 +863,62 @@ PTR=1285|3
     do macro end
 }
 
-; read from left char or use read buffer function
-{i is depricated &I }
-
-; read from buffer. If buffer is empty read from stdin. does not check for EOF
-; it seeks to -1, change it to -2. Then moves to the left until a empty cell is
-; reached. This is  then marked with -1 and th eprevious cell will be copied back
-; to the main variable area using -1 marks. removes the -1 and restores the -2 to -1
-; before returning.
-{I  depricated please reimplement in buffer area
-        read input to v and output
-        $t->+[->+]-->                       set 255 to t then move to first 255 on the right set to 254 move right
-        [[>]                                move right until 0 to the right of data
-
-;        optimized by dividing input with 8 and moving 8s to v
-;        then the remainder so that copy takes fewer moves across data
-;        avg data is 67 so on average we move 7 times to increse 8
-;        then 3 giving a total of 10 rounds instead of 66
-        ++++++++                            set 8 in the cell next to data
-        <&divmod                            divids input with 8
-        after 0=0 1=positive 2=n%d 3=n/d
-        >>>>-<                              mark 255
-        [- <+[-<+]-@t$v++++++++$w+[->+]-<]  copy result of div from input to v mul 8
-        >+<-<
-        [- <+[-<+]-@t$v+$w+[->+]-<]         copy remainder from from input to v
-        >+<<[-]<                            cleanup
-        ]
-
-        ++[--<++]-<                         move to 254 marker set to 255
-        +[-<+]@t                            move to t and reset input is in i
-        $m+$v[$m-]$z                        check if v is set
-        [@m- $v, $z]                        if then we read from stdin
-
-        $m+$v+[-$m-]$z                      convert ~1 to 0
-        [@m-$z]
+; uses buffer_read, expects to hit a string of positives t least from
+; -2 to buf and will add integers+1 until a \D is hit. 
+{read_numbers
+    @inp [ inp is always positive on first run
+      $wrk(.(-))
+      @inp
+      &buffer_read
+      $function+                                ; increase function by 1
+      $inp(-$function+$tmp+$wrk+)               ; copy read byte to function, tmp and wrk
+      $add++++++++(-$wrk------$function------)  ; reduce wrk and function by 48
+      $error+++++++++                           ; set 9 in error
+      (<<[->]>[<]@add$error-)                   ; wrk sub error
+      $wrk[(-) $function(-) was not number $add @wrk]    ; if wrk is zero (not number) reset function (which otherwise always is positive)
+      tmp has a copy if it was number we dont need it
+;      $function[$tmp.(-)$tmp]                   ; might need to fix this but right now I'll give it a chance
+      $function@inp                             ; shift everything to the right
+    ] ; -1|numbers|0|*0|char
+    ; we are at input and char is in tmp
 }
 
+; Assumes we have a position in i and a
+; where we want to move and create < and >
+; to do so. Used by both varmove and param 
+{posmove
+    $z<++++++(->++++++++++)                   ; 60 in z (<)
+
+    error checking is i 0 set e t is still 1
+    $i[-$t-$w+$a-
+    ; we have new position in i and old in p
+    $p( $a [-$w-]<[@w-
+        $p[-$z.$p] + $t] $w+$p-)            ; a is smaller than p, eg. <
+    $z++$w-$a(-$z.)$z(-)
+    $i(-$p+)                                ; set current position
+
+    $t]>[@t$e+$t->]@w                       ; set error flag if t is not set
+}
+
+;; buffer_read 
+{buffer_read
+; to be able to use chars from buffer without
+; moving data left we add 1s between buf  and function
+; both buf and function need to be empty
+  $buf[<]@buf 
+  for this to work buf and fun must be empty
+  $M+ set whatever before the next byte to 1
+  $I+[- $M- buffer not empty
+      $I(- $function[>]@function ^0+ $buf[<]@buf ) 
+      $buf
+  ]+<[-@M $I--
+      $function[>]@function
+      ^0,[+[-<$buf[<]@buf]]
+  ]
+  $function[>]@function
+}
+
+{buffer_cleanup [[-]<]@buf}
 
 ; Often used macroes and because of speed moved
 ; closer to the buffer.
@@ -546,7 +1014,6 @@ input area with bytes written from one or more macros
 [->>>>>>>[>>>>>>>>]+[<<<<<<<<]>]                    ; multiplied by 8 cells = 760 (3 elements)
 >>>>>>>[->>>>>>>>]                                      ; goto 776
 @z ; indicates that we are on z
-
 $o+$M-->>>@I+
 $buf,+[-<-]<[-@I<]                                      ; takes care of EOF=-1 on first char
 $I-$buf(                                                ; outer loop.
@@ -555,39 +1022,49 @@ $I-$buf(                                                ; outer loop.
 $tmp+                                                       ; i=I|t=1|w=I|p=x
 ; switch
 
-$wrk-                                                   ; reduce $w by 1 (start of macro expanded)
-  (-                                                    ; no, reduce by 1 (end of macro expanded)
-   (-$add+++(- $wrk ----------)$wrk                     ; reduce $w with -1-3*10=33(!)
-    (---                                                ; no, reduce $w with 3($)
-     (--                                                ; no, reduce $w with 2 (&)
-      (--                                               ; no  reduce $w with 2 "("
-       (-                                               ; no  reduce $w with 1 ")"
-        (-                                              ; no, reduce $w with 1 "*"
-         ( $add++++(- $wrk---- ) $wrk                   ; no, reduce $w with 16(:)
-          ( -                                           ; no, reduce by 1 (;)
-           ( -                                          ; no, reuce by 1 (<)
-            ( --                                        ; no, reuce by 2 (>)
-             ( --                                       ; no, reduce by 2 (@)
-              ( $add+++(- $wrk----------) $wrk          ; no, reduce by 30 (^)
-               ( $add+++(- $wrk----------) $wrk+        ; no, reduce by 29 ({)
-                (-                                      ; no, reduce by 1 (|)
-                 (  (-) $inp .(-)  $tmp- )                ; reset $wrk and $tmp
-                 $tmp (- $inp.(-) &print_string   )     ; in |. create code that prints string
-                )$tmp (- macro $inp+++$function+  )     ; in {, output ~, set 1 in i
-               ) $tmp (- $inp.(-)  &param         )     ; in ^, move to call position
-              )  $tmp (- at      $function+++     )     ; in @, outpuy @, set 2 in i
-             )   $tmp (- $inp.(-)      &go_up     )     ; run go_right since > adjusts pos
-            )    $tmp (- $inp.(-)      &go_down   )     ; run go_left since < adjusts pos
-           )     $tmp (-           &rm_comment    )     ; in ; removes comment
-          )      $tmp (- set       $function++    )     ; in :
-         )       $tmp (- $inp.(-) &multiply       )     ; in *
-        )        $tmp (- $inp(-) &close           )     ; in ")"
-       )         $tmp (- $inp(-) &open            )     ; in "("
-      )          $tmp (- replace $function++++    )     ; in &
-     )           $tmp (- varmove $function+++++   )     ; move to a ($) (t is 1)
-    )            $tmp (- delete  $function++++++  )     ; !
-   )             $tmp (- $inp-- &macrend          )     ; end of macro
-  )              $tmp (- $inp-  &macstart         )     ; macro start
+$wrk-                                                      ; reduce $w by 1 (start of macro expanded)
+  (-                                                       ; no, reduce by 1 (end of macro expanded)
+   (--------                                               ; no reduce by 8 (CR)
+    ($add+++++(- $wrk -----)$wrk++                         ; reduce $w with -5*5+2 =33(!)
+     (---                                                  ; no, reduce $w with 3($)
+      (--                                                  ; no, reduce $w with 2 (&)
+       (--                                                 ; no  reduce $w with 2 "("
+        (-                                                 ; no  reduce $w with 1 ")"
+         (-                                                ; no, reduce $w with 1 "*"
+          (-------                                         ; no. reduce $w with 7 "1"
+          $error++++++++                                   ; reduce by 8 eg 1-9 without 
+          (<<[->]>[<]@add$error-)$wrk                      ; reducing wrk below zero
+           (-                                              ; no, reduce $w with 1(:)
+            (-                                             ; no, reduce by 1 (;)
+             (-                                            ; no, reuce by 1 (<)
+              (--                                          ; no, reuce by 2 (>)
+               (-                                          ; no, reduce by 1 (?)
+                (-                                         ; no, reduce by 2 (@)
+                 ( $add+++(- $wrk----------) $wrk          ; no, reduce by 30 (^)
+                  ( $add+++(- $wrk----------) $wrk+        ; no, reduce by 29 ({)
+                   (-                                      ; no, reduce by 1 (|)
+                    (--                                    ; no, reduce by 2 (~)
+                      (  (-) $inp .(-)  $tmp- )            ; reset $wrk and $tmp
+                      $tmp (- $inp.(-) &store_string   )   ; in ~. create code that stores string                    
+                     )$tmp (- $inp.(-) &print_string   )   ; in |. create code that prints string
+                    ) $tmp (- macro $inp   $function+  )   ; in {, output ~, set 1 in i
+                   )  $tmp (- $inp.(-)  &param         )   ; in ^, move to call position
+                  )   $tmp (- at      $function+++     )   ; in @, outpuy @, set 2 in i
+                 )    $tmp (- $inp(-) &ebf_version     )   ; in ? which prints versioninfo
+                )     $tmp (- $inp.(-)      &go_up     )   ; run go_right since > adjusts pos
+               )      $tmp (- $inp.(-)      &go_down   )   ; run go_left since < adjusts pos
+              )       $tmp (-           &rm_comment    )   ; in ; removes comment
+             )        $tmp (- set       $function++    )   ; in :
+            )         $tmp (- $inp.    &multiply       )   ; in \d+x ( new multiply )
+           )          $tmp (- $inp.(-) &pointer_fix    )   ; in *, offset for lost pointer
+          )           $tmp (- $inp(-) &close           )   ; in ")"
+         )            $tmp (- $inp(-) &open            )   ; in "("
+        )             $tmp (- replace $function++++    )   ; in &
+       )              $tmp (- varmove $function+++++   )   ; move to a ($) (t is 1)
+      )               $tmp (- delete  $function++++++  )   ; !
+     )                $tmp (- $inp(-) #&lf             )   ; linefeed
+    )                 $tmp (- $inp-- &macrend          )   ; end of macro
+   )                  $tmp (- $inp-  &macstart         )   ; macro start
 
 ; if add is set we are really in var and need to move
 ; pointer to var area and copy error 
@@ -607,7 +1084,7 @@ buf function hash inp
 :hash
  $more+(-
     ; This either shifts everything (function and hash so far one left or read a byte
-    $buf+$I+[  -$buf- $function[-<+>] $error[-<+>] $hash[-<+>]< @hash $inp ]>[-# @buf$I+$buf,[+[-$I-]]<[-@I<] $I- $sub] ; also checks for eof
+    $buf+$I+[  -$buf- $function[-<+>] $error[-<+>] $hash[-<+>]< @hash $inp ]>[- @buf$I+$buf,[+[-$I-]]<[-@I<] $I- $sub] ; also checks for eof
     $buf(-$inp+$test+)          ; zerocopy v to inp and test
     $more++++++(-$test--------) ; reduce test by 48 ascii 0
     $sub+++++++++               ; set 9 to v
@@ -630,16 +1107,14 @@ buf function hash inp
   ))))
 
   $more(-
-      :copy:source:htmp:mcon
+      :copy:mcon
       $error(-)
-      $mcon+++++++++++
-      $hash(-$copy+$source+) move h to w
-      $mcon(-$copy(- $error+$hash[-<-]<[@error+++++(-$test++++++(-$hash+++++++))$hash--$test] test )$source(-$htmp+$copy+)$htmp(-$source+))
-      $source(-$copy-)
+      $hash(-$copy+) move h to w
+      $copy(- $mcon+++++++++++(-  $error+$hash[-<-]<[@error+++++(-$test++++++(-$hash+++++++))$hash--$test] test ))
       $inp. (- $error+$hash[-<-]<[@error+++++(-$test++++++(-$hash+++++++))$hash--$test] test ) pour c to h
       $error+ set e
       $test+
-      !mcon!htmp!source!copy
+      !mcon!copy
     )
     $test(-$more+)
   )
@@ -666,7 +1141,7 @@ move hash to v
 increase once to make it between 1 and 252
 $hash+
 :divisor
-$divisor*15+
+$divisor 15 +++++++++++++++
 
 $hash &divmod @hash
 $divisor(-)
@@ -683,18 +1158,18 @@ $hash++++++++(-$divisor++++++++)$divisor---.++++
 )
 
 $divisor-
-<+[-<+]--      change ~1 to ~2 at I
+<+[-<+]--      change m1 to m2 at I
 <++[--<++]--   @M
 $c-$v+[->+]- >  back to input
 [- <<+[-<+]- >++[->+]- >]      copy remainder
 <+>->                             move marker
-[- <<+[-<+]- >*15++[->+]- >]   copy divident
+[- <<+[-<+]- > 15 +++++++++++++++ +[->+]- >]   copy divident
 <+<@divisor
 
 $inp-                         move marker
 $function-([-<+]-@c$i++[->+]-@inp) 
 $inp+
-++[--<++]-                        change I to ~1 again
+++[--<++]-                        change I to m1 again
 <+[-<+]@c                         reset m
 $t+
 
@@ -711,7 +1186,7 @@ $i new switch
   ) $t (- &macro_create      )  
   &err_move2buf
  )
- $more(-$error+)
+ $more(-$function(-)$error+)
 )
 check for error
 $test+                                                 ; set flag
@@ -722,7 +1197,7 @@ $error(
 $test[-
 read another byte and exit if EOF
 $buf+$I+[- $buf- @function ]
->[[-@buf $I- $function+ $buf, #[+[- $function- ]]]
+>[[-@buf $I- $function+ $buf, [+[- $function- ]]]
 >[-@function $inp]]]
 )                                      ; loop until read EOF == 0/ -1/ no change
 
