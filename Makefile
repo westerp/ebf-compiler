@@ -22,13 +22,13 @@ BOOTSTRAP_FLAGS = --eof 0 -b 32
 EBF = ebf.bf
 JITBF = tools/jitbf
 CC = gcc -O2
-DESIGN = bunny.txt
+DESIGN = genie4.txt
 LOADING = loading.txt
 
 test: 	$(INTERPRETER).test.tmp
 	@echo "To make (perhaps new) binary, run make binary or better, make test-bin,  to create binary"
 
-all: 	test test-bin
+all: 	test test-bin examples
 
 testall: test test-bin test-interprenters
 
@@ -85,6 +85,10 @@ binary: ebf-bin.bf
 ebf-bin.bf: ebft.bf
 	@cat ebft.bf | tools/apply_code.pl object-design/$(DESIGN) | tee ebf-bin.bf
 
+examples: ebft.bf
+	cd examples && \
+	make
+
 release: version replace binary
 	@rm -rf ebf-compiler-$(REV).tar.gz  bf-compiler-$(REV).zip ebf-compiler-$(REV)
 	svn copy  -m "tagged release ebfv$$REV" $(SVNREPO)/trunk  $(SVNREPO)/tags/ebfv$(REV);
@@ -118,6 +122,8 @@ ebf-bin-bootstrap.bf:
 		wget -nv 'http://ebf-compiler.googlecode.com/svn/tags/ebfv1.3.0/ebf.ebf' -O ebf-1.3.0.ebf && \
 		echo "Downloading previous source ebfv1.3.2 to compile it with v1.3.0" && \
 		wget -nv 'http://ebf-compiler.googlecode.com/svn/tags/ebfv1.3.2/ebf.ebf' -O ebf-1.3.2.ebf && \
+		echo "Downloading previous source ebfv1.3.4 to compile it with v1.3.2" && \
+		wget -nv 'http://ebf-compiler.googlecode.com/svn/tags/ebfv1.3.4/ebf.ebf' -O ebf-1.3.4.ebf && \
 		echo "tools/strip_ebf.pl ebf-1.1.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-handcompiled.bf > ebf-bin-1.1.0.bf" && \
 		tools/strip_ebf.pl ebf-1.1.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-handcompiled.bf > ebf-bin-1.1.0.bf && \
 		tools/ebf_error.pl ebf-bin-1.1.0.bf && \
@@ -130,7 +136,10 @@ ebf-bin-bootstrap.bf:
 		echo "tools/strip_ebf.pl ebf-1.3.2.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.3.0.bf > ebf-bin-1.3.2.bf" && \
 		tools/strip_ebf.pl ebf-1.3.2.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.3.0.bf > ebf-bin-1.3.2.bf && \
 		tools/ebf_error.pl ebf-bin-1.3.2.bf && \
-		cp  ebf-bin-1.3.2.bf ebf-bin-bootstrap.bf || false; \
+		echo "tools/strip_ebf.pl ebf-1.3.4.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.3.2.bf > ebf-bin-1.3.4.bf" && \
+		tools/strip_ebf.pl ebf-1.3.4.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.3.2.bf > ebf-bin-1.3.4.bf && \
+		tools/ebf_error.pl ebf-bin-1.3.2.bf && \
+		cp  ebf-bin-1.3.4.bf ebf-bin-bootstrap.bf || false; \
 	fi
 
 help:

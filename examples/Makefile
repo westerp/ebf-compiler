@@ -20,7 +20,7 @@ INTERPRETER_FLAGS =
 EBF = ../ebft.bf
 EBF_ERROR=../tools/ebf_error.pl
 
-all: binary-quine.bf quine-generator.bf utf.bf cat.bf
+all: quine.bf quine2.bf binary-quine.bf quine-generator.bf utf.bf cat.bf
 
 .SUFFIXES:
 .SUFFIXES: .bf .ebf
