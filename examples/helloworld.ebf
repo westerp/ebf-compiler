@@ -1,7 +1,7 @@
 ; $Id$
 ; 
-; This is an implementation of a quine
-; when compiled and run it creates its own source code
+; This is an implementation of Hello World using print-string
+; functionality in EBF. It prints "Hello World\n" to the screen.
 ;
 ; ebf-compiler is free software: you can redistribute it and/or modify
 ; it under the terms of the GNU General Public License as published by
@@ -15,7 +15,6 @@
 ;
 ; You should have received a copy of the GNU General Public License
 ;
-; this does not really use any other ebf features than store-string
 |"Hello world!
 "
 
