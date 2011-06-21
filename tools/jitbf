@@ -47,7 +47,7 @@ my $arch_mask = 0xffffffff;
 if( $Config{archname} =~ /^x86_64/ ) {
     $arch_bits = 64;
     $arch_mask <<=32;
-    $arch_mask |=0xfffffff;
+    $arch_mask |=0xffffffff;
 }
 my $bit_size  = defined $predefined_bits ? $predefined_bits : $arch_bits;      # standard bit size is undefined
 my $num_cells = 0xffff; # set a memory limit. 0 == unlimited
