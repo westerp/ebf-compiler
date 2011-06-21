@@ -124,6 +124,8 @@ ebf-bin-bootstrap.bf:
 		wget -nv 'http://ebf-compiler.googlecode.com/svn/tags/ebfv1.3.2/ebf.ebf' -O ebf-1.3.2.ebf && \
 		echo "Downloading previous source ebfv1.3.4 to compile it with v1.3.2" && \
 		wget -nv 'http://ebf-compiler.googlecode.com/svn/tags/ebfv1.3.4/ebf.ebf' -O ebf-1.3.4.ebf && \
+		echo "Downloading previous source ebfv1.4.0 to compile it with v1.3.4" && \
+		wget -nv 'http://ebf-compiler.googlecode.com/svn/tags/ebfv1.4.0/ebf.ebf' -O ebf-1.4.0.ebf && \
 		echo "tools/strip_ebf.pl ebf-1.1.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-handcompiled.bf > ebf-bin-1.1.0.bf" && \
 		tools/strip_ebf.pl ebf-1.1.0.ebf | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-handcompiled.bf > ebf-bin-1.1.0.bf && \
 		tools/ebf_error.pl ebf-bin-1.1.0.bf && \
@@ -139,7 +141,10 @@ ebf-bin-bootstrap.bf:
 		echo "tools/strip_ebf.pl ebf-1.3.4.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.3.2.bf > ebf-bin-1.3.4.bf" && \
 		tools/strip_ebf.pl ebf-1.3.4.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.3.2.bf > ebf-bin-1.3.4.bf && \
 		tools/ebf_error.pl ebf-bin-1.3.2.bf && \
-		cp  ebf-bin-1.3.4.bf ebf-bin-bootstrap.bf || false; \
+		echo "tools/strip_ebf.pl ebf-1.4.0.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.3.4.bf | tee  ebf-bin-1.4.0.bf | tools/apply_code.pl object-design/$(LOADING)" && \
+		tools/strip_ebf.pl ebf-1.4.0.ebf  | $(JITBF) $(BOOTSTRAP_FLAGS) ebf-bin-1.3.4.bf | tee  ebf-bin-1.4.0.bf | tools/apply_code.pl object-design/$(LOADING) && \
+		tools/ebf_error.pl ebf-bin-1.4.0.bf && \
+		cp  ebf-bin-1.4.0.bf ebf-bin-bootstrap.bf && cp ebf-bin-1.4.0.bf ebf.bf || false; \
 	fi
 
 help:
