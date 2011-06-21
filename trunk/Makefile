@@ -65,7 +65,7 @@ fast: ebf.bf ebf.ebf
 
 
 ebf    : ebf.bf
-	$(JITBF) --fuzzy -p ebf.bf > ebf.c
+	$(JITBF) --description "EBF compiler - A Extended brainfuck to brainfuck compiler" --fuzzy -p ebf.bf > ebf.c
 	$(CC) ebf.c -o ebf
 
 ebf.bf: ebf-bin-bootstrap.bf
