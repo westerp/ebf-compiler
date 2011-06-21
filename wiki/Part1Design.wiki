@@ -14,7 +14,7 @@ $a ; command to move to th eposition of a
 
 == One character variable names ==
 There is no point in making this more difficult than it already is. So if we
-treat th efirst character as an operator (: $ and !) and the second carcter as the parameter
+treat the first character as an operator (: $ and !) and the second character as the parameter
 we can have a table lookup on the ascii value of the character to which the pointer value resides. 
 
 There is also no pojnt in not using a counter that increases for every allocation. this *requires* that we deallocate variables in reverse order as allocation. 
