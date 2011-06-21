@@ -18,7 +18,7 @@
 ;
 
 ; this is used by bf1.pl to label the data cells during debuging
-ML|eom|cr_rd|sym_rd|cr_pr|sym_pr|cr_min|sym_min|cr_cl|sym_cl|cr_op|sym_op|cr_lt|sym_lt|cr_gt|sym_gt|cr_plu|sym_plu|zero|cue|sourcen|source2|source|right|plus|destination|lcue
+ML/eom/cr_rd/sym_rd/cr_pr/sym_pr/cr_min/sym_min/cr_cl/sym_cl/cr_op/sym_op/cr_lt/sym_lt/cr_gt/sym_gt/cr_plu/sym_plu/zero/cue/sourcen/source2/source/right/plus/destination/lcue
 
 ; macroes used
 {seek1down +[->+] @lcue}
