@@ -18,7 +18,7 @@ The current version takes a variable name for each of the commands :,!,$,@,{ and
 
 = Hash function =
 
-At first I though the very easy Bernstein hash ( h = h*33 + new_val ) was a good choice, but that algorithm is good when we have larger cell sizes and arrays. I ended up having to reduce the value to something below 256 and the larger cell size the slower implementation. The actual method used now is h = h*2 + new_val-1 and h is then mod 251-ed and incremented so we have from 1 to 251 as values.
+At first I though the very easy Bernstein hash ( h = h*33 + new_val ) was a good choice, but that algorithm is good when we have larger cell sizes and arrays. I ended up having to reduce the value to something below 256 and the larger cell size the slower implementation. The actual method used now is h = h*11 + new_val-1 and h is then mod 251-ed and incremented so we have from 1 to 251 as values.
 
 = `^, ^0..^9` =
 
@@ -28,7 +28,7 @@ I did plan this and have had made room for a second stack in the beginning of th
 
 `*12>` turns one > into 12 >'s and, used to program in ebf, there is  much repetition. Another thing is `*97+` might be a better way to create an 'a' than a loop. Here I again used Daniels wonderful substract algo to check if each char read is a number. It also checks for > and < and updates position, again with the substract which also works as a addition with overflow check. I would want it to be able to have more than 255 for 8 bit, but its'a good start.
 
-= `%"store"` =
+= `~"store"` =
 
 This one is a bit of a pickle. I need to store the whole string and divide them in 10's or similar and create the string by writing it using an extra cell on the right that will end up being 0. Heres an example of storing the word test:
 {{{
