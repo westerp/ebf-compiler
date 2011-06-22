@@ -24,9 +24,9 @@ At first I though the very easy Bernstein hash ( h = h*33 + new_val ) was a good
 
 I did plan this and have had made room for a second stack in the beginning of the memory [Part3MacroAndBracketBalance (See Bracket balancing)]. I implemented two commands 1 and 2 where 1 pushed current position to macro stack and 2 removes the top of the stack. Then, when ^ occurs I copy the top most position (calling cell of current macro expansion) and apply < or > to move the pointer to that position. Here I reuse move_var-code by moving most of it to it's own macro. Then I added support for an optional numeric argument. If it's not a number i put it in h (left over char) which always be processed before anything else.
 
-= `*12>` =
+= `12>` =
 
-`*12>` turns one > into 12 >'s and, used to program in ebf, there is  much repetition. Another thing is `*97+` might be a better way to create an 'a' than a loop. Here I again used Daniels wonderful substract algo to check if each char read is a number. It also checks for > and < and updates position, again with the substract which also works as a addition with overflow check. I would want it to be able to have more than 255 for 8 bit, but its'a good start.
+`12>` turns one > into 12 >'s and, used to program in ebf, there is  much repetition. Another thing is `97+` might be a better way to create an 'a' than a loop. Here I again used Daniels wonderful substract algo to check if each char read is a number. It also checks for > and < and updates position, again with the substract which also works as a addition with overflow check. I would want it to be able to have more than 255 for 8 bit, but its'a good start.
 
 = `~"store"` =
 
