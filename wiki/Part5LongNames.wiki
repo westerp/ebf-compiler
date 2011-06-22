@@ -32,5 +32,5 @@ I did plan this and have had made room for a second stack in the beginning of th
 
 This one is a bit of a pickle. I need to store the whole string and divide them in 10's or similar and create the string by writing it using an extra cell on the right that will end up being 0. Heres an example of storing the word test:
 {{{
-%"test"++++>+>+++++>++++++>>++++++++++[-<+<+++++++++++<+++++++++++<++++++++++<++++++++>>>>>]
+~"test"++++>+>+++++>++++++>>++++++++++[-<+<+++++++++++<+++++++++++<++++++++++<++++++++>>>>>]
 }}}
