@@ -23,13 +23,14 @@
 
 -->
 <!DOCTYPE language SYSTEM "language.dtd">
-<language name="Extended BrainFuck" version="1.00" kateversion="3.4.2" section="Sources" extensions="*.ebf;*.bf;*.b" author="Pål Wester" licence="GPL">
+<language name="Extended BrainFuck" version="1.40" kateversion="3.4.2" section="Sources" extensions="*.ebf;*.bf;*.b" author="Pål Wester" licence="GPL">
 <highlighting>
     <contexts>
       <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
         <!--keyword attribute="Instructions (side effects)" context="#stay" String="Instructions (side effects)"/-->
+        <RegExpr attribute="Instructions (side effects)" context="#stay" String="[~|]&quot;[^&quot;]*&quot;"/>
         <RegExpr attribute="Normal Text" context="#stay" String="\s*\}\s*/" endRegion="Block"/>
-        <DetectChar attribute="Macro (balanced)" context="#stay" char="{" beginRegion="Block" />
+        <DetectChar attribute="Macro (balanced)" context="Macro" char="{" beginRegion="Block" />
         <DetectChar attribute="Macro (balanced)" context="#stay" char="}" endRegion="Block" />
         <DetectChar attribute="Instructions (balanced)" context="#stay" char="(" beginRegion="BBlock" />
         <DetectChar attribute="Instructions (balanced)" context="#stay" char=")" endRegion="BBlock" />
@@ -43,9 +44,12 @@
         <RegExpr attribute="Comment" context="#stay" String=";.*"/>
         <RegExpr attribute="Comment" context="#stay" String="[|\w]+"/>
        </context>
-    </contexts>
+       <context attribute="BFA function" lineEndContext="Normal" name="Macro">
+        <DetectChar attribute="Normal text" context="Normal" char=" "/>
+      </context>
+</contexts>
 
-	<itemDatas>
+<itemDatas>
       <itemData name="Instructions (math)" defStyleNum="dsKeyword"/>
       <itemData name="Instructions (pointer)" defStyleNum="dsOthers"/>
       <itemData name="Instructions (while loop)" defStyleNum="dsAlert"/>
@@ -55,7 +59,7 @@
       <itemData name="BFA variable" defStyleNum="dsDataType"/>
       <itemData name="BFA function" defStyleNum="dsFunction"/>
       <itemData name="Comment" defStyleNum="dsComment"/>
-    </itemDatas>
+</itemDatas>
 
 </highlighting>
   <general>
