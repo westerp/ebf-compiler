@@ -1,7 +1,11 @@
-; $Id$
-; 
+﻿; $Id$
+;
 ; This is an implementation of a binary-quine (example file)
 ; when compiled and run it creates its own object code without comments
+;
+; @encoding UTF-8
+; @package EBF http://sylwester.no/ebf/
+; @author Pål Wester <pal.wester.bf@sylwester.no>
 ;
 ; ebf-compiler is free software: you can redistribute it and/or modify
 ; it under the terms of the GNU General Public License as published by
@@ -41,18 +45,18 @@ we are at the last char
 &data
 
 @cue
-; seek for -1-2. 
+; seek for -1-2.
 ; used in quine-generator
 ; +[[-<+]->++[--<<]] @zero
 
 $sourcen &seek1down
 $destination 9+(-$plus 5+$right 7+)$plus.--$right-....
 ; this part creates the code that creates the data structure
-; so far not sure how it should represent but a good test 
+; so far not sure how it should represent but a good test
 ; would be to create some data and try to see if it recreates the same code
 $source
-+(- 
-      ; copy source to destination while printing out a + 
++(-
+      ; copy source to destination while printing out a +
       (- $plus. $destination+)
       $destination+
       $right. &copy2right

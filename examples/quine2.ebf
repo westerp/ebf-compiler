@@ -1,7 +1,11 @@
-; $Id: quine.ebf 116 2011-05-11 23:27:58Z westerp $
-; 
+﻿; $Id: quine.ebf 116 2011-05-11 23:27:58Z westerp $
+;
 ; This is an implementation of a quine
 ; when compiled and run it creates its own source code
+;
+; @encoding UTF-8
+; @package EBF http://sylwester.no/ebf/
+; @author Pål Wester <pal.wester.bf@sylwester.no>
 ;
 ; ebf-compiler is free software: you can redistribute it and/or modify
 ; it under the terms of the GNU General Public License as published by
