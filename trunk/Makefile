@@ -74,7 +74,7 @@ ebf.bf: ebf-bin-bootstrap.bf
 	mv ebf.tmp ebf.bf || false
 
 clean:
-	rm -rf ebf ebf.c ebft.bf ebf.bf *.tmp  tools/*.tmp *~  ebf-compiler-* ebf-*.ebf ebf-bin-* ebf-handcompiled.bf*
+	rm -rf ebf ebf.c ebft.bf ebf.bf *.tmp  examples/*.bf tools/*.tmp *~  ebf-compiler-* ebf-*.ebf ebf-bin-* ebf-handcompiled.bf*
 
 replace: ebft.bf test
 	mv ebf.bf ebf-old.bf

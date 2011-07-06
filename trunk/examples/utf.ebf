@@ -1,8 +1,12 @@
-;[
+﻿;[
 ; $Id$
-; 
+;
 ; This file is part of ebf-compiler (example file)
 ; utf.bf converts iso-8859-1-input and outputs valid UTF-8 version
+;
+; @encoding UTF-8
+; @package EBF http://sylwester.no/ebf/
+; @author Pål Wester <pal.wester.bf@sylwester.no>
 ;
 ; ebf-compiler is free software: you can redistribute it and/or modify
 ; it under the terms of the GNU General Public License as published by
@@ -71,7 +75,7 @@ while $input (
         $compare &clear if compare is not zero its 7 bit us ascii
   	$zero-
 	$tmp. &clear
-   ) 
+   )
    if $zero flag set
    (
     7+(-$input 8+) multiply 8 by 8 so we have 64 in input
@@ -83,7 +87,7 @@ while $input (
     )
     $compare 6-  decrease compare with 6 so we have set the 2 MSB
     . &clear     print first utf byte then clear
-    
+
     $zero 7+    increase zero by 7 so we have set the LSB
     . &clear    print second utf byte and clear
    )
@@ -91,4 +95,4 @@ while $input (
 )
 
 
-	
+

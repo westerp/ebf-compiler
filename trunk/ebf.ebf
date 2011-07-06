@@ -1,7 +1,11 @@
-;[
+﻿;[
 ; $Id$
 ; an extended brainfuck to pure brainfuck compiler
 ; for documentation, please go to http://sylwester.no/ebf/
+;
+; @encoding UTF-8
+; @package EBF http://sylwester.no/ebf/
+; @author Pål Wester <pal.wester.bf@sylwester.no>
 ;
 ; ebf-compiler is free software: you can redistribute it and/or modify
 ; it under the terms of the GNU General Public License as published by
@@ -25,7 +29,7 @@ PTR=1285/3
 ; MACRO DEFINITIONS
 
 {ebf_version
-|"EBF $Rev$"(-)
+|"EBF $Rev$ by Pål Wester. http://sylwester.no/ebf/"(-)
 }
 
 ; stack_error prints out ERROR if stack set
@@ -53,8 +57,8 @@ PTR=1285/3
 
 ; lf looks at buffer and if its only space, tab or cr we remove
 ; if buffer empty it reeds bytes until a char removing whitespace on the left side
-{lf 
-  # $function+  
+{lf
+  # $function+
   $tmp &buffer_read
   $tmp(-$inp+$wrk+)+
   ; switch ( $inp ) cases '\10;' using $tmp,
@@ -69,7 +73,7 @@ PTR=1285/3
   $wrk (
       move back byte to buffer
       $buf[<]@buf>[-]               ; make room for additional byte
-      >[>]@function                 ; and then 
+      >[>]@function                 ; and then
       $wrk(- $buf[<]@buf $I+        ; move
             $function[>]@function )
   )
@@ -128,7 +132,7 @@ PTR=1285/3
   with possible numeric operand for offset indication
   $buf+$I+[-$buf-@function]>[-@buf$I-$buf$inp]
   $buf(-$function+$inp+)
-  
+
   $tmp++++++(-$inp--------) ; reduce test by 48 ascii 0
   $wrk+++++++++
   (<<[->]>[<]@tmp$wrk-)
@@ -158,9 +162,9 @@ PTR=1285/3
   &fake_buffer
 }
 
-; prints a char the number of times stored to the 
+; prints a char the number of times stored to the
 ; left -1 in decimal number (-1 is to make sure 0 is different than no number)
-; you have number|0|*char 
+; you have number|0|*char
 {mulprint
   :pprev:prev:number:mark:char:mark2:pinc:pdec:pback
   @char
@@ -170,10 +174,10 @@ PTR=1285/3
         $char.
         $pdec+
         $pinc[- ; > or <
-          $pinc[+ 
+          $pinc[+
             ; its >
-            $char 
-                &buf2var 
+            $char
+                &buf2var
                   $a+$p+++[$a-]
                   $w[@a-$o(-)$p-$w]$p--
                 +[->+]->+[->+]-
@@ -184,8 +188,8 @@ PTR=1285/3
             -@pdec
              $pinc+
                 ; its <
-                &buf2var 
-                $a+$p[-$a-]$w[@a-$o(-)$w] 
+                &buf2var
+                $a+$p[-$a-]$w[@a-$o(-)$w]
                 +[->+]->+[->+]-
                 @mark2
              $pback
@@ -196,7 +200,7 @@ PTR=1285/3
     ;seek until > 1 but stop if next is zero
     $prev(
       $number-(
-          [<]>[-]@number        
+          [<]>[-]@number
       )
       ++++++++++@mark
     )
@@ -216,8 +220,8 @@ PTR=1285/3
 {multiply
     ; treats inp as if it was a number
     ; reads numbers until a \D is read
-    
-    ; we know inp has a number 
+
+    ; we know inp has a number
     ; buf for the sake of shorter code
     ; we do the validation again
 
@@ -244,7 +248,7 @@ PTR=1285/3
     ;  $wrk(-) ; for now just reset wrk
     ; if the char is not <>+- we should just print it and we're finished
       $inp+[-<+]+@tmp
-      <[-<] ; here we just removing buffer 1s 
+      <[-<] ; here we just removing buffer 1s
       +[->+]-@tmp
       $inp
       &mulprint
@@ -271,7 +275,7 @@ PTR=1285/3
 ; to tell the compiler where your pointer is after a asymetric loop
 ; you might write *-23 og *+3. Pointers over cell size is pointless
 ; so number gets stored in one cell here.
-{pointer_fix  
+{pointer_fix
     $function+ ; make room for additional byte
     $inp &buffer_read
     $tmp++++++(-$inp-------)
@@ -291,14 +295,14 @@ PTR=1285/3
        $function+++++++++
        (>>[-<]<[>]$function-)
        $inp+
-       $tmp( ; finished 
+       $tmp( ; finished
               #(-)$inp(-)$wrk(-)            ; clear
               $buf[<]@buf>[-]       ; make room for additional byte
-              >[>]@function         ; and then 
+              >[>]@function         ; and then
               $add(- $buf[<]@buf $I+  ; move
                     $function[>]@function )
               $I
-              @function 
+              @function
               -(- if function is 2 then its increment
                   $inp-(-
                       &buf2var
@@ -306,10 +310,10 @@ PTR=1285/3
                       $w[@a-$o(-)$p-$w]$p--
                       +[->+]-[>]@buf
                       $function[>]@function
-                      )                  
+                      )
               )$inp(-(- if set its decrement
                   &buf2var
-                  $a+$p[-$a-]$w[@a-$o(-)$w] 
+                  $a+$p[-$a-]$w[@a-$o(-)$w]
                   +[->+]-[>]@buf
                   $function[>]@function
               ))
@@ -324,7 +328,7 @@ PTR=1285/3
 }
 
 ; print_string takes a string parameter between delimiters (any)
-; expects that the current cell and next cell are empty 
+; expects that the current cell and next cell are empty
 ; or else you will have (hopefully calculated) sideffects
 ; to be shure you may want to >>(-)<(-)|"my string"
 ; or just (-)|"my string" if u utilize the same place every time
@@ -343,17 +347,17 @@ PTR=1285/3
   &buffer_read  ; read new char
   $wrk( ; check for eof
     (-$inp-$function+$diff+)
-    $inp( 
+    $inp(
         ; inp contains delimeter - new_char
         ; function contains new_char
         ; tmp contains last char (0 in the begining)
 
         ; compare old char and new char to determine
         ; which one is the largest
-        $tmp[ 
+        $tmp[
               ; tmp=a wrk=0 add=1 diff=b
-              $add+ $diff[-$add-] 
-              $wrk[@add  b is smaller    
+              $add+ $diff[-$add-]
+              $wrk[@add  b is smaller
                     $tmp(-$diff+)+  ; copy result to diff
               $wrk]$tmp
            -]
@@ -368,7 +372,7 @@ PTR=1285/3
         $zero+++(-$14++++)$14++
         ($diff[-$tmp+$zero]$14[$zero]$14-)
         $zero+
-        $diff(   ; above 14 we do multimply 
+        $diff(   ; above 14 we do multimply
             $zero- $tmp(-$diff+)
             !14!zero
             $diff  &sqrt @diff
@@ -426,11 +430,11 @@ PTR=1285/3
 }
 
 ; divide uses divmod and puts the rounded result in ^0 and indication of rounded in ^1
-;{divide &divmod >+(-<+) <[>>[-<]<[>]<-] >>([-]<+<+)>(-<<<+)@res} 
+;{divide &divmod >+(-<+) <[>>[-<]<[>]<-] >>([-]<+<+)>(-<<<+)@res}
 
 ; roundivmod uses divmod and puts the rounded result in ^0 and indication of rounded in ^1
 ; and a remainder (which ^1 is an indication is either reduction or inrement) in ^2
-{roundivmod 
+{roundivmod
     &divmod @cur
     ; *0|n-rem|rem|res|
     >>>(-<<<+)
@@ -449,7 +453,7 @@ PTR=1285/3
         <(-<<<+)
       )
   end divide
-} 
+}
 
 
 
@@ -493,36 +497,36 @@ PTR=1285/3
 
 {store_string ; eg ~
   !error!add        ; safe-guarding against more unknown variables
-  ;add 8, then divide each char with 16 
+  ;add 8, then divide each char with 16
   ; copy remainder
   ; sub one without wrap with 7
   ; if zero then do 8-remainder and use -
   ; if not then do remainder-8 and use +
-  ; 
+  ;
   ; code should print out remainders first
   ; eg +>-->>+>
   ; then a static
   ; code >++++[-<++++>]<[-
-  ; then the divided should be 
+  ; then the divided should be
   ; put in reverse order prefixed
   ; with a <
   ; finally > in the number of chars
   ; then ]
-  
+
   ; $fun~"[]<>-+" ; from fun => error
     ++++(->++++>++++)  ; 0|0|16|16
   <+++++(-<+++++++++)< ; 45|0|0|16|16|0|0
   (->++>++>+>+>+>+)    ; 0|90|90|61|61|45|45
   >+>+++>->+>>-->
   ; this does it in 78 chars while this procedure
-  ; will do it in 84. 7% overhead in such a short 
+  ; will do it in 84. 7% overhead in such a short
   ; text is not bad cosidering it's meant to do best
   ; on an medium sized sentences. For large sentences
-  ; 36! outperformes 16 as a multiplier. This came as 
+  ; 36! outperformes 16 as a multiplier. This came as
   ; a surprise as this meant  the remainder would be
   ; +-18 but it may be because it almost certainly
-  ; turns int o 3 multiples + 
-  
+  ; turns int o 3 multiples +
+
   +>@function
   $inp &buffer_read             ; quote-sign (any)
   $function-                    ; set mark for where to find <>.. (for buffer_read function will be this-tmp)
@@ -540,12 +544,12 @@ PTR=1285/3
       $res(-$function+)             ; store result in function
       $rem(-$wrk+$tmp+)             ; copy remainder to wrk and tmp
       $res+++++++                   ; set 7,
-      $res (<<[->]>[<]@rem$res-)   ; substract 7 from remainder without reducing it below zero 
+      $res (<<[->]>[<]@rem$res-)   ; substract 7 from remainder without reducing it below zero
       $tmp+
       $wrk(-
             ;we do +
             $tmp(-)                 ; reset tmp
-            $wrk( 
+            $wrk(
                 [-<+]-              ; move to marker
                 <<.                 ; to the +
                 [>]                 ; back to tmp
@@ -556,7 +560,7 @@ PTR=1285/3
             ; we do -
             $wrk++++++++            ; 8 in wrk
             $tmp(-$wrk-)            ; 8 - rem == number of '-'s
-            $wrk( 
+            $wrk(
                 [-<+]-              ; move to marker
                 <<<.                ; to the -
                 [>]                 ; back to tmp
@@ -586,7 +590,7 @@ PTR=1285/3
 
           $mark-[>]-@mark2
           $current+[-            ; this checks for -1 eg mark
-              +[-<+]-@mark       ; moves to mark   
+              +[-<+]-@mark       ; moves to mark
               $lt. [>]@romark2   ; prints < ang goers back
               $current           ; move to current multimplier
               -(                 ; reduce by 1 as all are added with one to not be zero
@@ -596,7 +600,7 @@ PTR=1285/3
                   +[->+]-@mark2  ; go back to mark2
                )                 ; continue until zero
                -$mark2+@romark2  ; shift mark one place left
-               $current+         ; increase new current to stop at mark 
+               $current+         ; increase new current to stop at mark
           ]-$mark2+@next
           $cnt(-
                 $gt.            ; print >s NB we need to increment p too
@@ -604,9 +608,9 @@ PTR=1285/3
                 $a+$p+++[$a-]   ; go to var area
                 $w[@a-$o(-)$p-$w]; and update
                 $p-[->+]-@I      ; position
-                >+[->+]-@mark;   :)               
+                >+[->+]-@mark;   :)
               )
-          $mark+ ; reset mark           
+          $mark+ ; reset mark
           $end.
    )
    $plu &buffer_cleanup
@@ -755,16 +759,16 @@ PTR=1285/3
     lets copy buf there
 ;    |B|F|Z|test|0|0|test2|0|0|0|-1|buf
     +[->+]@I      move to I and remove marker
-    $buf(-$I+$M+)  copy first buffer 
+    $buf(-$I+$M+)  copy first buffer
     @t to make this easy we assume we are at t
 
-    $t+$i( 
+    $t+$i(
         $t+++++++(-$i-------)+$i---          reduce by 59;  (;)
         (>+++++++(-<--------)+<              reduce by 64;  ({)
             (-                               reduce by 1 ; (|)
             (-                               reduce by 1 ;  (})
             (-                               reduce by 1 ; (~)
-            ( (-) catch all 
+            ( (-) catch all
                 $t-$w+
             )
               $t (- $w++ store_string)
@@ -795,7 +799,7 @@ PTR=1285/3
         $w(-
             (-                  ; in store_string/print_string
               :next:qub:qua:input:tst:zero
-              @qua 
+              @qua
               $tst+
               $input,              continue reading if w is set
               [+[-$tst-]]$zero    check for
@@ -863,7 +867,7 @@ PTR=1285/3
 }
 
 ; uses buffer_read, expects to hit a string of positives t least from
-; -2 to buf and will add integers+1 until a \D is hit. 
+; -2 to buf and will add integers+1 until a \D is hit.
 {read_numbers
     @inp [ inp is always positive on first run
       $wrk(.(-))
@@ -884,7 +888,7 @@ PTR=1285/3
 
 ; Assumes we have a position in i and a
 ; where we want to move and create < and >
-; to do so. Used by both varmove and param 
+; to do so. Used by both varmove and param
 {posmove
     $z<++++++(->++++++++++)                   ; 60 in z (<)
 
@@ -899,16 +903,16 @@ PTR=1285/3
     $t]>[@t$e+$t->]@w                       ; set error flag if t is not set
 }
 
-;; buffer_read 
+;; buffer_read
 {buffer_read
 ; to be able to use chars from buffer without
 ; moving data left we add 1s between buf  and function
 ; both buf and function need to be empty
-  $buf[<]@buf 
+  $buf[<]@buf
   for this to work buf and fun must be empty
   $M+ set whatever before the next byte to 1
   $I+[- $M- buffer not empty
-      $I(- $function[>]@function ^0+ $buf[<]@buf ) 
+      $I(- $function[>]@function ^0+ $buf[<]@buf )
       $buf
   ]+<[-@M $I--
       $function[>]@function
@@ -949,7 +953,7 @@ PTR=1285/3
 {err_move2buf
   copy error flag to error
   $e[ +[->+]-[>]@buf $error+ $I[<]]
-  +[->+]-[>]@buf 
+  +[->+]-[>]@buf
 }
 
 ; functions without parameters that work on variables need this in beginning of function
@@ -1031,7 +1035,7 @@ $wrk-                                                      ; reduce $w by 1 (sta
         (-                                                 ; no  reduce $w with 1 ")"
          (-                                                ; no, reduce $w with 1 "*"
           (-------                                         ; no. reduce $w with 7 "1"
-          $error++++++++                                   ; reduce by 8 eg 1-9 without 
+          $error++++++++                                   ; reduce by 8 eg 1-9 without
           (<<[->]>[<]@add$error-)$wrk                      ; reducing wrk below zero
            (-                                              ; no, reduce $w with 1(:)
             (-                                             ; no, reduce by 1 (;)
@@ -1044,7 +1048,7 @@ $wrk-                                                      ; reduce $w by 1 (sta
                    (-                                      ; no, reduce by 1 (|)
                     (--                                    ; no, reduce by 2 (~)
                       (  (-) $inp .(-)  $tmp- )            ; reset $wrk and $tmp
-                      $tmp (- $inp.(-) &store_string   )   ; in ~. create code that stores string                    
+                      $tmp (- $inp.(-) &store_string   )   ; in ~. create code that stores string
                      )$tmp (- $inp.(-) &print_string   )   ; in |. create code that prints string
                     ) $tmp (- macro $inp   $function+  )   ; in {, output ~, set 1 in i
                    )  $tmp (- $inp.(-)  &param         )   ; in ^, move to call position
@@ -1066,7 +1070,7 @@ $wrk-                                                      ; reduce $w by 1 (sta
    )                  $tmp (- $inp-  &macstart         )   ; macro start
 
 ; if add is set we are really in var and need to move
-; pointer to var area and copy error 
+; pointer to var area and copy error
 $add(-@a
   &err_move2buf
 )
@@ -1166,7 +1170,7 @@ $c-$v+[->+]- >  back to input
 <+<@divisor
 
 $inp-                         move marker
-$function-([-<+]-@c$i++[->+]-@inp) 
+$function-([-<+]-@c$i++[->+]-@inp)
 $inp+
 ++[--<++]-                        change I to m1 again
 <+[-<+]@c                         reset m
@@ -1182,7 +1186,7 @@ $i new switch
      ) $t (- &run_macro      )
     ) $t (- &var_position_set)
    ) $t (- &var_create       )
-  ) $t (- &macro_create      )  
+  ) $t (- &macro_create      )
   &err_move2buf
  )
  $more(-$function(-)$error+)

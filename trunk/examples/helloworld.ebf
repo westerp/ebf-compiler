@@ -1,7 +1,11 @@
-; $Id$
-; 
+﻿; $Id$
+;
 ; This is an implementation of Hello World using print-string
 ; functionality in EBF. It prints "Hello World\n" to the screen.
+;
+; @encoding UTF-8
+; @package EBF http://sylwester.no/ebf/
+; @author Pål Wester <pal.wester.bf@sylwester.no>
 ;
 ; ebf-compiler is free software: you can redistribute it and/or modify
 ; it under the terms of the GNU General Public License as published by
