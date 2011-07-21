@@ -38,4 +38,7 @@ Divide is the thing.. On average one char in the ebf.ebf source has 67 as ascii 
 
 http://chart.apis.google.com/chart?chf=bg,lg,41,EFEFEF,0,BBBBBB,1&chxs=0,AA0033,11.5&chxt=x&chs=500x305&cht=p3&chco=FF0000|0000FF|FF9900&chd=s:CBA&chdl=copy+from+macro+to+buffer|copy+from+buffer+to+input|everything+else&chdlp=t&chp=3.4&chl=3.88s|1.0s|0.11s&chma=|0,10&chtt=Time+usage&type=.png
 
+== Update2 ==
+Later in this project I actually do the switch in the buffer area and only move bytes to the variable area when it is an actual operation. Since code is very verbose this gives a even better performance gain. The bytes are still transferred divided though.
+
 [Part5LongNames Part5: Long variable names]
