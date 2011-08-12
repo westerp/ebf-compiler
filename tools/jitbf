@@ -475,7 +475,7 @@ while( $compiler_optimizer &&  $fruits ) {
             $movement_balance = 0;
             $zero_pointer_balance=0;
         }
-        elsif( $code[$i] =~ m/[\.,]/i || $code[$i] eq 'IF{' && $code[$i-2] !~ /(?:\+|MUL)/ )
+        elsif( $code[$i] =~ m/[\.,]/i || $code[$i] eq 'IF{' ) #&& $code[$i-2] !~ /(?:\+|MUL)/ )
         {
             # do not optimize when size effects or loop that does not imidiatly follow an increment (because then we will need MUL to take several arguments)
             $side_effects = 1 ;
