@@ -60,7 +60,7 @@ $d
 &print_twice_macro ; prints dd
 }}}
 
-Macroes knows from which data location it had when called and ^/^0 is that location. ^1 is the next cell to that and so on. This can be used as parameters to a macro. Combined with variable allocation and deallocation it can do more than a static macro.
+Macroes knows from which data location it had when called and `^/^0` is that location. ^1 is the next cell to that and so on. This can be used as parameters to a macro. Combined with variable allocation and deallocation it can do more than a static macro.
 
 {{{
 {print_plusone
