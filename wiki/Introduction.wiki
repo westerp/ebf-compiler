@@ -1,4 +1,5 @@
 #summary Introcution to the ebf-compiler and some thoughts on other peoples ideas
+#labels Featured
 =Creating a self-hosting compiler=	
 ==What I expect you to know to understand this==
 
