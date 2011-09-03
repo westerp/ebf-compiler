@@ -13,7 +13,7 @@ Assume you have a value in test to check if is either 3 or 2
 :flag
 $test 3+ ; depending on number here it will change outcome
 $flag+
-switch $test--
+switch $test-- ; word switch has no function other than readability
 (-
         ((-) $flag- |"It was no match"(-)  )
   $flag (- |"It was 3"(-) )
@@ -28,7 +28,7 @@ Here is another example testing for linefeed or not using a asymmetric (as in th
 :zero
 $test , 10- ; read and reduce with 10 aka linefeed
 $flag+
-if $test
+if $test ; the word if before the command to move to test has no fucntion other than readability
 [
   $flag-
   |"Input was not linefeed"(-)
