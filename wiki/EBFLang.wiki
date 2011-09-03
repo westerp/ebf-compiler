@@ -79,6 +79,6 @@ $s &print_plusone
 $t &print_plusone ; this will work since print_plusone is not destructive!
 }}}
 
-The code above will print uftu which is the ceasar chipher for test with key 1. This is not effiecent as we could just have done >~"tset"<[+.<] to do the same.
+The code above will print uftu which is the Caesar cipher for test with key 1. This is not efficient as we could just have done {{{ >~"tset"<[+.<] }}} to do the same.
 
 = stay tuned for more cool stuff here... =
