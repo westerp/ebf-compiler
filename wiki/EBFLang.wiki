@@ -30,7 +30,7 @@ $test , 10- ; read and reduce with 10 aka linefeed
 $flag+
 if $test ; the word if before the command to move to test has no fucntion other than readability
 [
-  $flag-
+  $flag- ; moves to flag and resets. compiler will think it's in flag
   |"Input was not linefeed"(-)
 ]
 @test                   ; tell compiler that we are in test
