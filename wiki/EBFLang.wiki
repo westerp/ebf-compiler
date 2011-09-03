@@ -81,4 +81,4 @@ $t &print_plusone ; this will work since print_plusone is not destructive!
 
 The code above will print uftu which is the ceasar chipher for test with key 1.
 
-= stay toned for more cool stuff here... =
+= stay tuned for more cool stuff here... =
