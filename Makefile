@@ -24,11 +24,24 @@ JITBF = tools/jitbf
 CC = gcc -O2
 DESIGN = genie4.txt
 LOADING = loading.txt
+PREFIX = /usr/bin
 
 test: 	$(INTERPRETER).test.tmp
 	@echo "To make (perhaps new) binary, run make binary or better, make test-bin,  to create binary"
 
 all: 	test test-bin examples
+
+install: ebf tools/ebf_error.pl $(JITBF)
+	@if [ -w $(PREFIX) ]; then\
+		echo cp ebf tools/ebf_error.pl $(JITBF) $(PREFIX);\
+		cp ebf tools/ebf_error.pl $(JITBF) $(PREFIX);\
+	else\
+		echo "No rights to install in $(PREFIX). Please use make install-local to install in ~/bin or set PREFIX=<your directory>" ;\
+		false;\
+	fi
+
+install-local:
+	make install PREFIX=~/bin
 
 testall: test test-bin test-interprenters
 
@@ -65,7 +78,7 @@ fast: ebf.bf ebf.ebf
 
 
 ebf    : ebf.bf
-	$(JITBF) --description "EBF compiler - A Extended brainfuck to brainfuck compiler" --fuzzy -p ebf.bf > ebf.c
+	$(JITBF) --description "EBF compiler - A Extended brainfuck to brainfuck compiler" --fuzzy -p -b 8 ebf.bf > ebf.c
 	$(CC) ebf.c -o ebf
 
 ebf.bf: ebf-bin-bootstrap.bf
