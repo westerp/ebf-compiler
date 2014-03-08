@@ -36,8 +36,8 @@
         <DetectChar attribute="Instructions (balanced)" context="#stay" char=")" endRegion="BBlock" />
         <DetectChar attribute="Instructions (while loop)" context="#stay" char="[" beginRegion="WBlock" />
         <DetectChar attribute="Instructions (while loop)" context="#stay" char="]" endRegion="WBlock" />
-        <RegExpr attribute="Instructions (pointer)" context="#stay" String="[&lt;&gt;]"/>
-        <RegExpr attribute="Instructions (math)" context="#stay" String="[-\+]"/>
+        <RegExpr attribute="Instructions (pointer)" context="#stay" String="\d*[&lt;&gt;]"/>
+        <RegExpr attribute="Instructions (math)" context="#stay" String="\d*[-\+]"/>
         <RegExpr attribute="Instructions (side effects)" context="#stay" String="[,.]"/>
         <RegExpr attribute="BFA variable" context="#stay" String="[:\!@^]\w+"/>
         <RegExpr attribute="BFA function" context="#stay" String="[\$&amp;]\w+"/>
