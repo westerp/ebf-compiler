@@ -58,11 +58,11 @@ PTR=1285/3
 ; lf looks at buffer and if its only space, tab or cr we remove
 ; if buffer empty it reeds bytes until a char removing whitespace on the left side
 {lf
-  # $function+
+  $function+
   $tmp &buffer_read
   $tmp(-$inp+$wrk+)+
   ; switch ( $inp ) cases '\10;' using $tmp,
-  #$inp----------; \10
+  $inp----------; \10
   ($tmp++++++(-$inp-------)+$inp; ;
     ((-) $tmp(-)++++++++++.(-) )
       $tmp (- match semi
@@ -296,7 +296,7 @@ PTR=1285/3
        (>>[-<]<[>]$function-)
        $inp+
        $tmp( ; finished
-              #(-)$inp(-)$wrk(-)            ; clear
+              (-)$inp(-)$wrk(-)            ; clear
               $buf[<]@buf>[-]       ; make room for additional byte
               >[>]@function         ; and then
               $add(- $buf[<]@buf $I+  ; move
@@ -1020,7 +1020,7 @@ input area with bytes written from one or more macros
 $o+$M-->>>@I+
 $buf,+[-<-]<[-@I<]                                      ; takes care of EOF=-1 on first char
 $I-$buf(                                                ; outer loop.
-
+#
 (- $inp+ $wrk+)                                         ; pour $i to $w and $t
 $tmp+                                                       ; i=I|t=1|w=I|p=x
 ; switch
@@ -1065,7 +1065,7 @@ $wrk-                                                      ; reduce $w by 1 (sta
         )             $tmp (- replace $function++++    )   ; in &
        )              $tmp (- varmove $function+++++   )   ; move to a ($) (t is 1)
       )               $tmp (- delete  $function++++++  )   ; !
-     )                $tmp (- $inp(-) #&lf             )   ; linefeed
+     )                $tmp (- $inp(-) &lf             )   ; linefeed
     )                 $tmp (- $inp-- &macrend          )   ; end of macro
    )                  $tmp (- $inp-  &macstart         )   ; macro start
 
