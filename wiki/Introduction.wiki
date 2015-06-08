@@ -42,6 +42,6 @@ either brainfuck or the language the compiler supports.
 The aim of this project was to make a self-hosting (written in itself)
 compiler and see how I could bootstrap this and how it will eventually
 evolve. Beeing [http://www.iwriteiam.nl/Ha_bf_Turing.html Turing complete] there is nothing you cannot implement in 
-brainfuck.
+brainfuck. It's very inspired by [http://homepage.ntlworld.com/edmund.grimley-evans/bcompiler.html Edmund GRIMLEY EVANS' Bootstrapping a simple compiler from nothing] which I highly recommend.
 
 If you are interested you may go to  [Part1Design Part 1: Design]
