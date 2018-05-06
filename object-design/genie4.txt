@@ -1,4 +1,4 @@
-EBF COMPILER SUITE [ $Rev$ $URL$ ]
+EBF COMPILER SUITE [ VERSION http://sylwester.no/ebf/ ]
 by SYLWESTER                                         _____*
                                                     =&**X**
 This is free software                               **Q#XX**

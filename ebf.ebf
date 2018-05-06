@@ -1,5 +1,4 @@
 ;[
-; $Id$
 ; an extended brainfuck to pure brainfuck compiler
 ; for documentation, please go to http://sylwester.no/ebf/
 ;
@@ -29,7 +28,7 @@ PTR=1285/3
 ; MACRO DEFINITIONS
 
 {ebf_version
-|"EBF $Rev$ by Pål Wester. http://sylwester.no/ebf/"(-)
+|"EBF VERSION by Pål Wester. http://sylwester.no/ebf/"(-)
 }
 
 ; stack_error prints out ERROR if stack set
