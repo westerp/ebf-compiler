@@ -533,7 +533,7 @@ sub create_c_code
   int error = 0;
   int i = 0;
   if( !( fhs = malloc(sizeof(FILE*)*argc+1) ) ){
-      fprintf(stderr, "Malloc fail\\n", argv[0]);
+      fprintf(stderr, "%s: Malloc fail\\n", argv[0]);
       exit(1);
   }
   for(i=1; i< argc; i++) {
