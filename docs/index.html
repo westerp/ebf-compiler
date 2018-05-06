@@ -1,0 +1,327 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Ebf-compiler by westerp</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1 class="header">Ebf-compiler</h1>
+        <p class="header">Extended BrainFuck to pure BrainFuck compiler - now also with a brainfuck jit compiler/interpreter</p>
+
+        <ul>
+          <li class="download"><a class="buttons" href="https://github.com/westerp/ebf-compiler/zipball/master">Download ZIP</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/westerp/ebf-compiler/tarball/master">Download TAR</a></li>
+          <li><a class="buttons github" href="https://github.com/westerp/ebf-compiler">View On GitHub</a></li>
+        </ul>
+
+        <p class="header">This project is maintained by <a class="header name" href="https://github.com/westerp">westerp</a></p>
+
+
+      </header>
+      <section>
+        <p></p>
+
+<h1>
+<a id="a-self-hosting-extended-brainfuck-to-pure-brainfuck-compiler" class="anchor" href="#a-self-hosting-extended-brainfuck-to-pure-brainfuck-compiler" aria-hidden="true"><span class="octicon octicon-link"></span></a>A self hosting Extended brainfuck to pure brainfuck compiler</h1>
+
+<p>EFB Compiler extends brainfuck by using extra symbols. The output will be valid brainfuck code that can run on any interpreter/compiler. If you are interested in the process of making this compiler, please go to the <a href="Introduction.md">Introduction</a>. To find out more about the the syntax have a look at <a href="EBFLang.md">EBF language introduction</a></p>
+
+<h2>
+<a id="serious-use-zozotez---a-lisp-interpreter-implemented-in-ebf" class="anchor" href="#serious-use-zozotez---a-lisp-interpreter-implemented-in-ebf" aria-hidden="true"><span class="octicon octicon-link"></span></a>Serious use: Zozotez - a LISP interpreter implemented in EBF</h2>
+
+<p>The high level goal was to be able to implement a LISP interpreter which runs on brainfuck and bootstrapped with EBF.  I have spawned a new project called <strong><a href="http://code.google.com/p/zozotez/">Zozotez for creating LISP with EBF</a></strong>.</p>
+
+<h2>
+<a id="current-features" class="anchor" href="#current-features" aria-hidden="true"><span class="octicon octicon-link"></span></a>Current features</h2>
+
+<ul>
+<li>Variables with variable length names</li>
+<li>Alternative bracket () for automatic bracket aligning</li>
+<li>A macro replace mechanism that is nestable with parameter passing</li>
+<li>multiplication of bf commands by using number in front of them. eg. 256&gt;</li>
+<li>print string and store string for easy string manipulation</li>
+<li>All the power of <code>BrainFuck</code>. All BF programs are EBF programs :)</li>
+<li>Compatible with most cross compilers/interpreters. Supports all EOF convensions</li>
+</ul>
+
+<p><img src="http://sylwester.no/gcodeimg/lamp_50.png" alt="http://sylwester.no/gcodeimg/lamp_50.png"></p>
+
+<h2>
+<a id="current-commands-in-addition-to-bfs--" class="anchor" href="#current-commands-in-addition-to-bfs--" aria-hidden="true"><span class="octicon octicon-link"></span></a>Current Commands in addition to BFs <code>&lt;&gt;+-[],.</code>
+</h2>
+
+<p><em>var in these examples can be any string of alphanumeric characters and underscore `[\w</em>]+`._</p>
+
+<table cellpadding="2" border="1">
+<tr>
+<th>group</th>
+<th>function</th>
+<th>description</th>
+</tr>
+<tr>
+<td>variable</td>
+<td><b>:var</b></td>
+<td>Defines a variable. It allocates variable in the order of appearance, eg. <img class="emoji" title=":a:" alt=":a:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f170.png" height="20" width="20" align="absmiddle">b will give a position and b position 1. If you try to redefine a variable it will report ERROR. For byte-oriented interpreters/cross compilers the maximum number of variable allocated at the same time is 253.</td>
+</tr>
+<tr>
+<td><b>$var</b></td>
+<td>Applies 's in order to move from current position to the position allocated to variable named x. It assumes it is at position 0 at the start of the application and it will follow  given that you don't create an asymmetric loop.</td>
+</tr>
+<tr>
+<td><b><a href="https://github.com/var" class="user-mention">@var</a></b></td>
+<td>To give the compiler the position after a asymmetric loop. Take for instance: <code>:a:b:c:d [&gt;-]&gt;[-&gt;] @c&lt; </code> It is impossible for the code to actually go into both loops so in reality you will always be in c and not d as the compiler thinks. </td>
+</tr>
+<tr>
+<td><b>!var</b></td>
+<td>Deallocates variable x. It is assumed that x was the last variable allocated and will halt with an ERROR if not.</td>
+</tr>
+<tr>
+<td>structure</td>
+<td>
+<b>(</b>...<b>)</b>
+</td>
+<td>Auto-aligning brackets. <code> $a($b+++) =&gt; $a[$b+++$a] </code>. This might be used in rotating data structures like array seeking as well. consider we have an array left of <code> :c:a:z </code> which is open.. <code> $c(@z) </code> will seek until bread crumb is zero. It supports up to 251 nested loops. awib 0.2 has 18 and as of writing ebf has 12 as it's highest nesting level.</td>
+</tr>
+<tr>
+<td>macro</td>
+<td>
+<b>{name</b>...<b>}</b>
+</td>
+<td>Create macro named x. Contents will not be echoed since it might contain brainfuck code that will affect execution. A macro cannot create other macroes. When macroes are expanded ebf will treat the expanded text as ebf code, not just pure brainfuck. This enables a macro expansion to trigge runderlying macro expansins and the posibility to create complex code in layers of abstraction.</td>
+</tr>
+<tr>
+<td><b>&amp;name</b></td>
+<td>Insert macro x.</td>
+</tr>
+<tr>
+<td><b><code>^&lt;index&gt;</code></b></td>
+<td>
+<code>^0</code> works like $var. <code>^0</code> is the cell from which the macro was called and ^1 is the first cell after making this a kind if parameter passing possible eg we have<br>
+<img class="emoji" title=":a:" alt=":a:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f170.png" height="20" width="20" align="absmiddle">b:c and we are at a when invoking &amp;a. In there <code>^ and ^0 is $a, ^1 is $b and ^2 is $c</code>.<br>
+If we afterwards are at $b and call the macro, then ^0 would be $b.</td>
+</tr>
+<tr>
+<td><b><code>*&lt;+-&gt;&lt;offset&gt;</code></b></td>
+<td>Another way to indicate offset. Like <a href="https://github.com/a" class="user-mention">@a</a>, but you tell the relative offset fix. Eg. <code>*-3</code> will reduce the compilers assumed position with 3. Used in combination with <code>^&lt;number&gt;</code> where macro does not know of it's real position (eg. it could be called from any position and hench reused)</td>
+</tr>
+<tr>
+<td>Syntax sugar</td>
+<td><b><code>&lt;number&gt;&lt;+-&lt;&gt;&gt;</code></b></td>
+<td>
+Eg. 10+ reads like "times 10 plus". It replicates any of the commands <code>&lt;&gt;+-</code> the number of times indicated by the digits before the operation (+ in example). It does not have cell boundry limits. <code>512&gt;</code> is OK for 8 bit interpreter/compilers.<br>
+</td>
+</tr>
+<tr>
+<td><b><code>~</code>"text"</b></td>
+<td>Stores the string denoted by text from the current cell. Position end up one cell to the right from the last character in the string. Example uses double quotes, but in reality any character will do, eg. <code>~*"'^*</code> uses asterix as quote character</td>
+</tr>
+<tr>
+<td><b>|"text"</b></td>
+<td>Prints the string denoted by test using the current and the next cell, which needs to be empty. Current cell contains last character after operation.Like store string you might use any quote char.<br>
+</td>
+</tr>
+</table>
+
+<h2>
+<a id="examples-the-advantage-of-ebf-comes-apparent-when-dealing-with-larger-projects-than-these-examples" class="anchor" href="#examples-the-advantage-of-ebf-comes-apparent-when-dealing-with-larger-projects-than-these-examples" aria-hidden="true"><span class="octicon octicon-link"></span></a>Examples,. The advantage of EBF comes apparent when dealing with larger projects than these examples</h2>
+
+<p></p><table border="1">
+<tr>
+<td><b>desc</b></td>
+<td><b>EBFsource</b></td>
+<td><b>BFobject</b></td>
+</tr>
+<tr>
+<td><code>HelloWorld</code></td>
+<td>
+
+<pre><code>|"Hello World
+<br>
+"
+<br>
+</code></pre>
+
+<p></p>
+</td>
+<td>
+
+<pre><code>&gt;++++++++[-&lt;+++++++++&gt;]&lt;.
+<br>
+&gt;+++++[-&lt;++++++&gt;]&lt;-.+++++
+<br>
+++..+++.&gt;+++++++++[-&lt;----
+<br>
+-----&gt;]&lt;++.&gt;+++++++[-&lt;+++
+<br>
++++++&gt;]&lt;-.&gt;+++++[-&lt;+++++&gt;
+<br>
+]&lt;-.+++.------.--------.&gt;
+<br>
+++++++++[-&lt;--------&gt;]&lt;---
+<br>
+.&gt;++++[-&lt;-----&gt;]&lt;---.
+<br>
+</code></pre>
+
+<p></p>
+</td>
+</tr>
+<tr>
+<td>echo</td>
+
+<blockquote>
+<td>
+<pre><code>;;macro definitions
+<br>
+{read $eof_flag+$input(-),[+[-&gt;-]]&gt;[@eof_flag-&gt;]}
+<br>
+{print .}
+<br>
+var :input
+<br>
+var :eof_flag
+<br>
+;;main program
+<br>
+&amp;read
+<br>
+$input(
+<br>
+  &amp;print
+<br>
+  &amp;read
+<br>
+)
+<br>
+</code></pre>
+</td>
+<td>
+<pre><code>&gt;+&lt;[-],[+[-&gt;-]]&gt;[-&gt;]&lt;&lt;[.
+<br>
+&gt;+&lt;[-],[+[-&gt;-]]&gt;[-&gt;]&lt;&lt;]
+<br>
+</code></pre>
+</td>
+</blockquote>
+</tr>
+<tr>
+<td>simple<br>
+add</td>
+<td>
+<pre><code>{read ^1eof_flag+^0input(-),[+[-&gt;-]]&gt;[-&gt;] *-1}
+<br>
+:num1
+<br>
+:num2
+<br>
+$num1 &amp;read
+<br>
+$num2 &amp;read
+<br>
+$num1 48-
+<br>
+$num1(-$num2+)
+<br>
+$num2 .
+<br>
+</code></pre>
+</td>
+<td>
+<pre><code>&gt;+&lt;[-],[+[-&gt;-]]&gt;[-&gt;]&lt;&gt;
+<br>
++&lt;[-],[+[-&gt;-]]&gt;[-&gt;]&lt;&lt;&lt;
+<br>
+----------------------
+<br>
+----------------------
+<br>
+----[-&gt;+&lt;]&gt;. 
+<br>
+</code></pre>
+</td>
+</tr>
+<tr>
+<td>reverse<br>
+echo</td>
+<td>
+<pre><code>:input
+<br>
+:end_flag
+<br>
+
+<br>
+{read
+<br>
+  $end_flag+ 
+<br>
+  $input,
+<br>
+  +[11-[$end_flag-]]&gt;[@end_flag-&gt;]
+<br>
+}
+<br>
+
+<br>
+; read until linefeed/eof
+<br>
++(-&gt;@input &amp;read ) 
+<br>
+; print in reverse order
+<br>
+&lt;@input[11+.(-)&lt;] 
+<br>
+; print newline
+<br>
+10+.
+<br>
+</code></pre>
+</td>
+<td>
+<pre><code>+[-&gt;&gt;+&lt;,+[-----------[
+<br>
+&gt;-]]&gt;[-&gt;]&lt;&lt;]&lt;[++++++++
+<br>
++++.[-]&lt;]++++++++++.
+<br>
+</code></pre>
+</td>
+</tr>
+</table>
+
+<p><a href="http://code.google.com/p/ebf-compiler/source/browse/#svn%2Ftrunk%2Fexamples">See more examples in source repository</a></p>
+
+<h1>
+<a id="this-site-is-a-member-of-a-web-ring" class="anchor" href="#this-site-is-a-member-of-a-web-ring" aria-hidden="true"><span class="octicon octicon-link"></span></a>This site is a member of a <code>Web Ring</code>.</h1>
+
+<p>To browse visit <a href="http://ss.webring.com/navbar?f=l;y=webringcom44;u=defurl">The Esoteric Programming Languages Ring</a>
+<br><br></p>
+      </section>
+      <footer>
+        <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+		          <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-24492615-3");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+  </body>
+</html>
