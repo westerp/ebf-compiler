@@ -42,4 +42,4 @@ compiler and see how I could bootstrap this and how it will eventually<br>
 evolve. Beeing <a href='http://www.iwriteiam.nl/Ha_bf_Turing.html'>Turing complete</a> there is nothing you cannot implement in<br>
 brainfuck. It's very inspired by <a href='http://homepage.ntlworld.com/edmund.grimley-evans/bcompiler.html'>Edmund GRIMLEY EVANS' Bootstrapping a simple compiler from nothing</a> which I highly recommend.<br>
 <br>
-If you are interested you may go to  <a href='Part1Design.md'>Part 1: Design</a>
+If you are interested you may go to  [Part 1: Design](Part1Design.md)
